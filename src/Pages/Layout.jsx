@@ -1,27 +1,55 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 import SideBar from "../Components/SideBar";
-// import NavBar from "../Components/Navbar";
+import NavBar from "../Components/NavBar";
 import Footer from "../Components/Footer";
 
 function Layout() {
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const location = useLocation();
+
+    // Close mobile menu on route change
+    useEffect(() => {
+        setMobileMenuOpen(false);
+    }, [location]);
+
+    // Close mobile menu on escape key
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') setMobileMenuOpen(false);
+        };
+        window.addEventListener('keydown', handleEscape);
+        return () => window.removeEventListener('keydown', handleEscape);
+    }, []);
+
     return (
-        <>
-            <main style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-                <SideBar />
+        <div className="app-layout">
+            {/* Mobile Menu Toggle */}
+            <button 
+                className="mobile-menu-toggle"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Toggle menu"
+            >
+                {mobileMenuOpen ? '✕' : '☰'}
+            </button>
 
-                <div style={{ flex: 1, overflow: "scroll" }}>
-                    {/* <NavBar /> */}
+            {/* Overlay for mobile */}
+            <div 
+                className={`sidebar-overlay ${mobileMenuOpen ? 'active' : ''}`}
+                onClick={() => setMobileMenuOpen(false)}
+            />
 
-                    <div style={{ padding: "25px" }}>
-                        <Outlet />
-                    </div>
+            <SideBar isOpen={mobileMenuOpen} />
 
-                    <Footer />
+            <div className="main-content">
+                <NavBar />
+                <div className="content-area">
+                    <Outlet />
                 </div>
-            </main>
-
-        </>
-    )
+                <Footer />
+            </div>
+        </div>
+    );
 }
 
-export default Layout
+export default Layout;
