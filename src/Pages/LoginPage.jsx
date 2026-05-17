@@ -2,6 +2,7 @@ import { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../Context/UserContext';
 import { FaMosque, FaLock, FaUser } from 'react-icons/fa';
+import { API_BASE_URL } from '../Api/config';
 
 function LoginPage() {
     const [username, setUsername] = useState('');
@@ -17,7 +18,7 @@ function LoginPage() {
         setError('');
 
         try {
-            const response = await fetch('http://localhost:5191/api/adminauth/login', {
+            const response = await fetch(`${API_BASE_URL}/api/adminauth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

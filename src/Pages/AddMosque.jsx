@@ -2,6 +2,15 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { MosqueService } from "../Api/MosqueService"
 
+const fileToDataUrl = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = () => reject(new Error("Failed to read image file"))
+        reader.readAsDataURL(file)
+    })
+}
+
 function AddMosque() {
     const nav = useNavigate()
     const [formData, setFormData] = useState({
@@ -16,16 +25,33 @@ function AddMosque() {
         longitude: '',
         imageUrl: ''
     })
+    const [imageFile, setImageFile] = useState(null)
+    const [imagePreview, setImagePreview] = useState("")
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
     }
 
+    const handleImageFileChange = (e) => {
+        const file = e.target.files?.[0]
+        setImageFile(file || null)
+        setImagePreview(file ? URL.createObjectURL(file) : "")
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
+        const uploadedImage = imageFile ? await fileToDataUrl(imageFile) : ""
+        const images = [formData.imageUrl.trim(), uploadedImage].filter(Boolean)
+        
+        const payload = {
+            ...formData,
+            latitude: Number(formData.latitude),
+            longitude: Number(formData.longitude),
+            imageUrl: images
+        }
         
         try {
-            await MosqueService.create(formData)
+            await MosqueService.create(payload)
             alert("Mosque created successfully")
             nav("/")
         } catch (err) {
@@ -154,8 +180,24 @@ function AddMosque() {
                                 name="imageUrl" 
                                 value={formData.imageUrl} 
                                 onChange={handleChange} 
-                                placeholder="https://example.com/mosque.jpg" 
+                                placeholder="https://example.com" 
                             />
+                        </div>
+
+                        <div className="form-group full-width">
+                            <label>Upload Mosque Image</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageFileChange}
+                            />
+                            {imagePreview && (
+                                <img
+                                    className="image-preview"
+                                    src={imagePreview}
+                                    alt="Mosque preview"
+                                />
+                            )}
                         </div>
                     </div>
 

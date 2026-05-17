@@ -1,15 +1,26 @@
 import { Link } from "react-router-dom";
 import { FaHeart, FaRegHeart, FaMapMarkerAlt, FaArrowRight } from "react-icons/fa";
 
+const fallbackImage = "https://placehold.co/600x360/e2e8f0/15803d?text=Mosque";
+
+const getMosqueImage = (imageUrl) => {
+    if (Array.isArray(imageUrl)) return imageUrl[0] || fallbackImage;
+    if (typeof imageUrl === "string" && imageUrl.trim()) return imageUrl;
+    return fallbackImage;
+};
+
 function MosqueCard({ mosque, isFavorite, onToggleFavorite }) {
     return (
         <div className="mosque-card">
             <div className="card-image">
-                {mosque.imageUrl ? (
-                    <img src={mosque.imageUrl} alt={mosque.name} loading="lazy" />
-                ) : (
-                    <div className="mosque-emoji">🕌</div>
-                )}
+                <img 
+                    src={getMosqueImage(mosque.imageUrl)}
+                    alt={mosque.name} 
+                    className="mosque-img"
+                    onError={(e) => {
+                        e.currentTarget.src = fallbackImage;
+                    }}
+                />
                 
                 <button 
                     className="fav-btn"

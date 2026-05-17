@@ -4,10 +4,12 @@ import {
     Marker,
     InfoWindow,
     Autocomplete,
+    DirectionsRenderer,
 } from "@react-google-maps/api";
 import { useEffect, useRef, useState } from "react";
 import { MosqueService } from "../Api/MosqueService";
-import { FaDirections } from "react-icons/fa";
+import { addDistanceToMosques } from "../Api/DistanceHelper";
+import { FaDirections, FaTimes } from "react-icons/fa";
 
 const containerStyle = {
     width: "100%",
@@ -17,21 +19,8 @@ const containerStyle = {
 
 const libraries = ["places"];
 
-const addDistanceToMosques = (mosques, userLoc) => {
-    const toRad = (v) => (v * Math.PI) / 180;
-    const calcKm = (aLat, aLng, bLat, bLng) => {
-        const R = 6371;
-        const dLat = toRad(bLat - aLat);
-        const dLng = toRad(bLng - aLng);
-        const x = Math.sin(dLat / 2) ** 2 +
-            Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
-        return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
-    };
-
-    return mosques.map((m) => ({
-        ...m,
-        distanceKm: calcKm(userLoc.lat, userLoc.lng, m.latitude, m.longitude).toFixed(2),
-    }));
+const getNearbyMosques = (mosques, radiusKm = 10) => {
+    return mosques.filter((m) => parseFloat(m.distanceKm) <= radiusKm);
 };
 
 function MapView({ setMosques }) {
@@ -40,31 +29,39 @@ function MapView({ setMosques }) {
     const [selected, setSelected] = useState(null);
     const [map, setMap] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [directions, setDirections] = useState(null);
 
     const searchRef = useRef(null);
+    const rawMosquesRef = useRef([]);
 
-    useEffect(() => {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-            () => setUserLocation({ lat: 6.5244, lng: 3.3792 })
-        );
-    }, []);
-
+    // Initial load — fetch mosques + get user location once
     useEffect(() => {
         const load = async () => {
             try {
                 setLoading(true);
                 const data = await MosqueService.getAll();
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    const userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    setUserLocation(userLoc);
-                    const enriched = addDistanceToMosques(data, userLoc);
-                    localSetMosques(enriched);
-                    setMosques?.(enriched);
-                    setLoading(false);
-                }, () => {
-                    setLoading(false);
-                });
+                rawMosquesRef.current = data;
+
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const userLoc = {
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude,
+                        };
+                        setUserLocation(userLoc);
+                        setLoading(false);
+                    },
+                    () => {
+                        const fallback = { lat: 6.5244, lng: 3.3792 };
+                        setUserLocation(fallback);
+                        const enriched = addDistanceToMosques(data, fallback).sort(
+                            (a, b) => a.distanceKm - b.distanceKm
+                        );
+                        localSetMosques(enriched);
+                        setMosques?.(enriched);
+                        setLoading(false);
+                    }
+                );
             } catch (err) {
                 console.error("Failed loading mosques:", err);
                 setLoading(false);
@@ -73,12 +70,61 @@ function MapView({ setMosques }) {
         load();
     }, []);
 
+    // ✅ Recalculate distances every time userLocation changes
+    useEffect(() => {
+        if (!userLocation || rawMosquesRef.current.length === 0) return;
+
+        const enriched = addDistanceToMosques(rawMosquesRef.current, userLocation).sort(
+            (a, b) => a.distanceKm - b.distanceKm
+        );
+        localSetMosques(enriched);
+        setMosques?.(enriched);
+    }, [userLocation]);
+
+    // Auto fit map to show user + nearby mosques
+    useEffect(() => {
+        if (!map || !userLocation || mosques.length === 0) return;
+
+        const bounds = new window.google.maps.LatLngBounds();
+        bounds.extend(userLocation);
+
+        const nearby = getNearbyMosques(mosques);
+        nearby.forEach((m) =>
+            bounds.extend({ lat: m.latitude, lng: m.longitude })
+        );
+
+        if (nearby.length === 0) {
+            map.panTo(userLocation);
+            map.setZoom(14);
+        } else {
+            map.fitBounds(bounds, { padding: 60 });
+        }
+    }, [map, userLocation, mosques]);
+
     const onLoad = (mapInstance) => setMap(mapInstance);
 
-    const openDirections = (mosque) => {
-        window.open(
-            `https://www.google.com/maps/dir/?api=1&destination=${mosque.latitude},${mosque.longitude}`,
-            "_blank"
+    const showDirectionsOnMap = (mosque) => {
+        if (!userLocation || !window.google) return;
+
+        const directionsService = new window.google.maps.DirectionsService();
+        directionsService.route(
+            {
+                origin: userLocation,
+                destination: { lat: mosque.latitude, lng: mosque.longitude },
+                travelMode: window.google.maps.TravelMode.DRIVING,
+            },
+            (result, status) => {
+                if (status === window.google.maps.DirectionsStatus.OK) {
+                    setDirections(result);
+                    setSelected(null);
+                } else {
+                    console.error("Directions request failed:", status);
+                    window.open(
+                        `https://www.google.com/maps/dir/?api=1&destination=${mosque.latitude},${mosque.longitude}`,
+                        "_blank"
+                    );
+                }
+            }
         );
     };
 
@@ -91,15 +137,53 @@ function MapView({ setMosques }) {
 
             {loading ? (
                 <div className="empty-state">
-                    <div className="loading-spinner" style={{ margin: '0 auto 20px' }} />
+                    <div
+                        className="loading-spinner"
+                        style={{ margin: "0 auto 20px" }}
+                    />
                     <p>Loading map data...</p>
                 </div>
             ) : (
-                <div className="map-container" style={{ height: '70vh', minHeight: '400px' }}>
+                <div
+                    className="map-container"
+                    style={{
+                        height: "90vh",
+                        minHeight: "500px",
+                        position: "relative",
+                    }}
+                >
+                    {/* Clear Route button */}
+                    {directions && (
+                        <button
+                            onClick={() => setDirections(null)}
+                            style={{
+                                position: "absolute",
+                                top: 12,
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                zIndex: 10,
+                                background: "#ef4444",
+                                color: "#fff",
+                                border: "none",
+                                padding: "8px 16px",
+                                borderRadius: "8px",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                            }}
+                        >
+                            <FaTimes /> Clear Route
+                        </button>
+                    )}
+
                     <LoadScript
                         googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_KEY}
                         libraries={libraries}
                     >
+                        {/* ✅ Input is direct child of Autocomplete, properly sized */}
                         <Autocomplete
                             onLoad={(ref) => (searchRef.current = ref)}
                             onPlaceChanged={() => {
@@ -114,9 +198,25 @@ function MapView({ setMosques }) {
                                 map?.setZoom(14);
                             }}
                         >
-                            <div className="map-search-box">
-                                <input placeholder="Search location..." />
-                            </div>
+                            <input
+                                placeholder="Search location..."
+                                style={{
+                                    position: "absolute",
+                                    top: "12px",
+                                    left: "50%",
+                                    transform: "translateX(-50%)",
+                                    zIndex: 10,
+                                    width: "400px",
+                                    padding: "12px 16px",
+                                    borderRadius: "8px",
+                                    border: "none",
+                                    fontSize: "14px",
+                                    boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                                    outline: "none",
+                                    background: "#fff",
+                                    color: "#0f172a",
+                                }}
+                            />
                         </Autocomplete>
 
                         <GoogleMap
@@ -126,61 +226,143 @@ function MapView({ setMosques }) {
                             onLoad={onLoad}
                             options={{
                                 styles: [
-                                    { elementType: "geometry", stylers: [{ color: "#1e293b" }] },
-                                    { elementType: "labels.text.stroke", stylers: [{ color: "#1e293b" }] },
-                                    { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+                                    {
+                                        elementType: "geometry",
+                                        stylers: [{ color: "#1e293b" }],
+                                    },
+                                    {
+                                        elementType: "labels.text.stroke",
+                                        stylers: [{ color: "#1e293b" }],
+                                    },
+                                    {
+                                        elementType: "labels.text.fill",
+                                        stylers: [{ color: "#94a3b8" }],
+                                    },
                                 ],
                                 mapTypeControl: false,
                                 fullscreenControl: true,
-                                streetViewControl: false,
+                                streetViewControl: true,
                             }}
                         >
+                            {/* ✅ key prop forces marker to re-render when location changes */}
                             {userLocation && (
                                 <Marker
+                                    key={`user-${userLocation.lat}-${userLocation.lng}`}
                                     position={userLocation}
-                                    icon="http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                                    icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                                    zIndex={999}
+                                    label={{
+                                        text: "You",
+                                        color: "#ffffff",
+                                        fontSize: "11px",
+                                        fontWeight: "700",
+                                    }}
                                 />
                             )}
 
+                            {/* Mosque markers */}
                             {mosques.map((m, i) => (
                                 <Marker
                                     key={i}
-                                    position={{ lat: m.latitude, lng: m.longitude }}
+                                    position={{
+                                        lat: m.latitude,
+                                        lng: m.longitude,
+                                    }}
                                     icon="http://maps.google.com/mapfiles/ms/icons/green-dot.png"
-                                    onClick={() => setSelected(m)}
+                                    label={{
+                                        text: m.name,
+                                        color: "#ffffff",
+                                        fontSize: "11px",
+                                        fontWeight: "600",
+                                        className: "marker-label",
+                                    }}
+                                    onClick={() => {
+                                        setSelected(m);
+                                        setDirections(null);
+                                    }}
                                 />
                             ))}
 
                             {selected && (
                                 <InfoWindow
-                                    position={{ lat: selected.latitude, lng: selected.longitude }}
+                                    position={{
+                                        lat: selected.latitude,
+                                        lng: selected.longitude,
+                                    }}
                                     onCloseClick={() => setSelected(null)}
                                 >
-                                    <div style={{ padding: '8px', minWidth: '200px' }}>
-                                        <h4 style={{ marginBottom: '8px', color: '#059669' }}>
-                                            {selected.name}
-                                        </h4>
-                                        <p style={{ fontSize: '14px', marginBottom: '12px' }}>
-                                            {selected.distanceKm} km away
-                                        </p>
-                                        <button 
-                                            onClick={() => openDirections(selected)}
+                                    <div
+                                        style={{
+                                            padding: "8px",
+                                            minWidth: "200px",
+                                        }}
+                                    >
+                                        <h4
                                             style={{
-                                                background: '#10b981',
-                                                color: '#0f172a',
-                                                border: 'none',
-                                                padding: '8px 16px',
-                                                borderRadius: '8px',
-                                                fontWeight: 600,
-                                                cursor: 'pointer',
-                                                width: '100%'
+                                                marginBottom: "8px",
+                                                color: "#059669",
                                             }}
                                         >
-                                            <FaDirections style={{ marginRight: '6px' }} />
+                                            {selected.name}
+                                        </h4>
+                                        <p
+                                            style={{
+                                                fontSize: "14px",
+                                                marginBottom: "4px",
+                                                color: "#64748b",
+                                            }}
+                                        >
+                                            📍 Lat: {selected.latitude}, Lng:{" "}
+                                            {selected.longitude}
+                                        </p>
+                                        <p
+                                            style={{
+                                                fontSize: "14px",
+                                                marginBottom: "12px",
+                                            }}
+                                        >
+                                            {selected.distanceKm
+                                                ? `${selected.distanceKm} km away`
+                                                : selected.address || ""}
+                                        </p>
+                                        <button
+                                            onClick={() =>
+                                                showDirectionsOnMap(selected)
+                                            }
+                                            style={{
+                                                background: "#10b981",
+                                                color: "#0f172a",
+                                                border: "none",
+                                                padding: "8px 16px",
+                                                borderRadius: "8px",
+                                                fontWeight: 600,
+                                                cursor: "pointer",
+                                                width: "100%",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                gap: "6px",
+                                            }}
+                                        >
+                                            <FaDirections />
                                             Directions
                                         </button>
                                     </div>
                                 </InfoWindow>
+                            )}
+
+                            {directions && (
+                                <DirectionsRenderer
+                                    directions={directions}
+                                    options={{
+                                        suppressMarkers: true,
+                                        polylineOptions: {
+                                            strokeColor: "#10b981",
+                                            strokeWeight: 5,
+                                            strokeOpacity: 0.8,
+                                        },
+                                    }}
+                                />
                             )}
                         </GoogleMap>
                     </LoadScript>

@@ -5,13 +5,16 @@ import { getUserLocation, calculateDistance } from "../Api/Location";
 import { MosqueService } from "../Api/MosqueService";
 import { FaMapMarkerAlt, FaList } from "react-icons/fa";
 
+const fallbackLocation = { lat: 6.5244, lng: 3.3792 };
+const mosquesPerPage = 6;
+
 function Home() {
     const [mosques, setMosques] = useState([]);
     const [nearByMosques, setNearByMosques] = useState([]);
     const [filteredMosques, setFilteredMosques] = useState([]);
-    const [userLocation, setUserLocation] = useState(null);
     const [loading, setLoading] = useState(true);
     const [favorites, setFavorites] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
 
     // Load favorites
     useEffect(() => {
@@ -32,6 +35,7 @@ function Home() {
     const handleSearch = useCallback((query) => {
         if (!query.trim()) {
             setFilteredMosques(mosques);
+            setCurrentPage(1);
             return;
         }
         const q = query.toLowerCase();
@@ -41,6 +45,7 @@ function Home() {
             m.region?.toLowerCase().includes(q)
         );
         setFilteredMosques(filtered);
+        setCurrentPage(1);
     }, [mosques]);
 
     useEffect(() => {
@@ -48,20 +53,24 @@ function Home() {
             try {
                 setLoading(true);
                 const data = await MosqueService.getAll();
-                const pos = await getUserLocation();
+                let pos;
+                try {
+                    pos = await getUserLocation();
+                } catch {
+                    pos = { latitude: fallbackLocation.lat, longitude: fallbackLocation.lng };
+                }
                 const userLoc = { lat: pos.latitude, lng: pos.longitude };
                 
-                setUserLocation(userLoc);
-
                 const enriched = data.map((m) => ({
                     ...m,
-                    distance: calculateDistance(userLoc.lat, userLoc.lng, m.latitude, m.longitude),
+                    distance: calculateDistance(userLoc.lat, userLoc.lng, Number(m.latitude), Number(m.longitude)),
                 }));
 
                 const sorted = enriched.sort((a, b) => a.distance - b.distance);
                 setMosques(sorted);
                 setFilteredMosques(sorted);
                 setNearByMosques(sorted.filter((m) => m.distance <= 5));
+                setCurrentPage(1);
             } catch (error) {
                 console.error(error);
             } finally {
@@ -70,6 +79,12 @@ function Home() {
         };
         init();
     }, []);
+
+    const totalPages = Math.max(1, Math.ceil(filteredMosques.length / mosquesPerPage));
+    const startIndex = (currentPage - 1) * mosquesPerPage;
+    const paginatedMosques = filteredMosques.slice(startIndex, startIndex + mosquesPerPage);
+    const pageStart = filteredMosques.length === 0 ? 0 : startIndex + 1;
+    const pageEnd = Math.min(startIndex + mosquesPerPage, filteredMosques.length);
 
     if (loading) {
         return (
@@ -124,16 +139,45 @@ function Home() {
                         <p>Try adjusting your search criteria</p>
                     </div>
                 ) : (
-                    <div className="mosque-grid">
-                        {filteredMosques.map((item) => (
-                            <MosqueCard 
-                                key={item.id} 
-                                mosque={item} 
-                                isFavorite={favorites.some(f => f.id === item.id)}
-                                onToggleFavorite={() => toggleFavorite(item)}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="mosque-grid">
+                            {paginatedMosques.map((item) => (
+                                <MosqueCard 
+                                    key={item.id} 
+                                    mosque={item} 
+                                    isFavorite={favorites.some(f => f.id === item.id)}
+                                    onToggleFavorite={() => toggleFavorite(item)}
+                                />
+                            ))}
+                        </div>
+
+                        <div className="pagination-bar">
+                            <span>
+                                Showing {pageStart}-{pageEnd} of {filteredMosques.length}
+                            </span>
+                            <div className="pagination-controls">
+                                <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                                >
+                                    Previous
+                                </button>
+                                <span className="page-count">
+                                    Page {currentPage} of {totalPages}
+                                </span>
+                                <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    </>
                 )}
             </section>
         </div>

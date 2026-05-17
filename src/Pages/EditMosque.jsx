@@ -2,30 +2,26 @@ import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { MosqueService } from "../Api/MosqueService"
 
+const fileToDataUrl = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = () => reject(new Error("Failed to read image file"))
+        reader.readAsDataURL(file)
+    })
+}
+
+const firstImageUrl = (imageUrl) => {
+    if (Array.isArray(imageUrl)) return imageUrl[0] || ""
+    return imageUrl || ""
+}
+
 function EditMosque() {
     const nav = useNavigate()
     const [mosque, setMosque] = useState({})
     const { id } = useParams()
-    const API_URL = 'http://localhost:5191/api/mosque';
-
-    useEffect(() => {
-        getMosque()
-    }, [id])
-
-    const getMosque = async () => {
-        try {
-            const data = await MosqueService.getAll()
-            const find = data.find(item => item.id == id)
-            if (!find) {
-                alert("mosque not found")
-                return
-            }
-            setMosque(find)
-        }
-        catch (err) {
-            alert(err.message)
-        }
-    }
+    const [imageFile, setImageFile] = useState(null)
+    const [imagePreview, setImagePreview] = useState("")
 
     const [formData, setformData] = useState({
         name: "",
@@ -41,28 +37,58 @@ function EditMosque() {
     })
 
     useEffect(() => {
-        setformData({
-            name: mosque.name,
-            address: mosque.address,
-            state: mosque.state,
-            region: mosque.region,
-            circuit: mosque.circuit,
-            jamaat: mosque.jamaat,
-            contact: mosque.contact,
-            latitude: mosque.latitude,
-            longitude: mosque.longitude,
-            imageUrl: mosque.imageUrl
-        })
-    }, [mosque])
+        const getMosque = async () => {
+            try {
+                const data = await MosqueService.getById(id)
+                if (!data) {
+                    alert("mosque not found")
+                    return
+                }
+
+                setMosque(data)
+                setformData({
+                    name: data.name || "",
+                    address: data.address || "",
+                    state: data.state || "",
+                    region: data.region || "",
+                    circuit: data.circuit || "",
+                    jamaat: data.jamaat || "",
+                    contact: data.contact || "",
+                    latitude: data.latitude || "",
+                    longitude: data.longitude || "",
+                    imageUrl: firstImageUrl(data.imageUrl)
+                })
+                setImagePreview(firstImageUrl(data.imageUrl))
+            }
+            catch (err) {
+                alert(err.message)
+            }
+        }
+
+        getMosque()
+    }, [id])
 
     const handleChange = (e) => {
         setformData({ ...formData, [e.target.name]: e.target.value })
     }
 
-    const handleSubmit = (e) => {
+    const handleImageFileChange = (e) => {
+        const file = e.target.files?.[0]
+        setImageFile(file || null)
+        setImagePreview(file ? URL.createObjectURL(file) : firstImageUrl(mosque.imageUrl))
+    }
+
+    const handleSubmit = async (e) => {
         e.preventDefault()
         try {
-            MosqueService.update(mosque.id, formData)
+            const uploadedImage = imageFile ? await fileToDataUrl(imageFile) : ""
+            const images = [formData.imageUrl.trim(), uploadedImage].filter(Boolean)
+            await MosqueService.update(mosque.id, {
+                ...formData,
+                latitude: Number(formData.latitude),
+                longitude: Number(formData.longitude),
+                imageUrl: images,
+            })
             alert("Mosque updated successfully")
                nav("/");
         } catch (error) {
@@ -74,7 +100,7 @@ function EditMosque() {
     return (
         <>
             <div className="form-panel">
-                <h2>Add Mosque</h2>
+                <h2>Edit Mosque</h2>
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-grid">
@@ -133,6 +159,14 @@ function EditMosque() {
                         <div className="form-group full-width">
                             <label>Image URL</label>
                             <input type="url" name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="https://example.com/mosque.jpg" />
+                        </div>
+
+                        <div className="form-group full-width">
+                            <label>Upload Mosque Image</label>
+                            <input type="file" accept="image/*" onChange={handleImageFileChange} />
+                            {imagePreview && (
+                                <img className="image-preview" src={imagePreview} alt="Mosque preview" />
+                            )}
                         </div>
                     </div>
 

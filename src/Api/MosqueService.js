@@ -1,74 +1,111 @@
 // Api/MosqueService.js
+import { API_BASE_URL } from "./config";
 
-const API_URL = "http://localhost:5191/api/mosque";
+const API_URL = `${API_BASE_URL}/api/mosque`;
 
 const getToken = () => JSON.parse(localStorage.getItem("adminToken"));
 
+const unwrapValues = (value) => {
+    if (Array.isArray(value)) return value;
+    if (value && Array.isArray(value.$values)) return value.$values;
+    if (value && Array.isArray(value.data)) return value.data;
+    if (value && value.data && Array.isArray(value.data.$values)) return value.data.$values;
+    return value;
+};
+
+const normalizeImageUrls = (imageUrl) => {
+    const urls = unwrapValues(imageUrl);
+    if (Array.isArray(urls)) return urls.filter(Boolean);
+    if (typeof urls === "string" && urls.trim()) return [urls.trim()];
+    return [];
+};
+
+const normalizeMosque = (mosque) => {
+    if (!mosque) return mosque;
+
+    return {
+        ...mosque,
+        id: mosque.id ?? mosque.mosqueId ?? mosque.Id,
+        name: mosque.name ?? mosque.Name ?? "",
+        address: mosque.address ?? mosque.Address ?? "",
+        state: mosque.state ?? mosque.State ?? "",
+        region: mosque.region ?? mosque.Region ?? "",
+        circuit: mosque.circuit ?? mosque.Circuit ?? "",
+        jamaat: mosque.jamaat ?? mosque.Jamaat ?? "",
+        contact: mosque.contact ?? mosque.Contact ?? "",
+        latitude: Number(mosque.latitude ?? mosque.Latitude ?? 0),
+        longitude: Number(mosque.longitude ?? mosque.Longitude ?? 0),
+        dateCreated: mosque.dateCreated ?? mosque.DateCreated,
+        imageUrl: normalizeImageUrls(mosque.imageUrl ?? mosque.imageUrls ?? mosque.images ?? mosque.ImageUrl ?? mosque.ImageUrls),
+    };
+};
+
+const normalizeMosques = (data) => {
+    const mosques = unwrapValues(data);
+    return Array.isArray(mosques) ? mosques.map(normalizeMosque) : [];
+};
+
 export const MosqueService = {
-  // GET ALL MOSQUES
-  getAll: async () => {
-    const res = await fetch(API_URL);
+    // GET ALL MOSQUES
+    getAll: async () => {
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error("Failed to fetch mosques");
+        return normalizeMosques(await res.json());
+    },
 
-    if (!res.ok) {
-      throw new Error("Failed to fetch mosques");
-    }
+    // ✅ GET SINGLE MOSQUE BY ID
+    getById: async (id) => {
+        const res = await fetch(`${API_URL}/${id}`);
+        if (!res.ok) throw new Error("Mosque not found");
+        return normalizeMosque(await res.json());
+    },
 
-    return await res.json();
-  },
+    // GET NEARBY FROM BACKEND
+    getNearby: async (lat, lng, radiusKm = 10) => {
+        const res = await fetch(
+            `${API_URL}/nearby?latitude=${lat}&longitude=${lng}&radiusKm=${radiusKm}`
+        );
+        if (!res.ok) throw new Error("Failed to fetch nearby mosques");
+        return normalizeMosques(await res.json());
+    },
 
-  // GET NEARBY FROM BACKEND (if you use it)
-  getNearby: async (lat, lng, radiusKm = 10) => {
-    const res = await fetch(
-      `${API_URL}/nearby?latitude=${lat}&longitude=${lng}&radiusKm=${radiusKm}`
-    );
+    // CREATE
+    create: async (data) => {
+        const res = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getToken()}`,
+            },
+            body: JSON.stringify(data),
+        });
+        if (!res.ok) throw new Error("Failed to create mosque");
+        return res.json();
+    },
 
-    if (!res.ok) {
-      throw new Error("Failed to fetch nearby mosques");
-    }
+    // UPDATE
+    update: async (id, data) => {
+        const res = await fetch(`${API_URL}/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getToken()}`,
+            },
+            body: JSON.stringify(data),
+        });
+        if (!res.ok) throw new Error("Failed to update mosque");
+        return res.json();
+    },
 
-    return await res.json();
-  },
-
-  // CREATE
-  create: async (data) => {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${getToken()}`,
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!res.ok) throw new Error("Failed to create mosque");
-    return res.json();
-  },
-
-  // UPDATE
-  update: async (id, data) => {
-    const res = await fetch(`${API_URL}/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${getToken()}`,
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!res.ok) throw new Error("Failed to update mosque");
-    return res.json();
-  },
-
-  // DELETE
-  delete: async (id) => {
-    const res = await fetch(`${API_URL}/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${getToken()}`,
-      },
-    });
-
-    if (!res.ok) throw new Error("Failed to delete mosque");
-    return res.json();
-  },
+    // DELETE
+    delete: async (id) => {
+        const res = await fetch(`${API_URL}/${id}`, {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${getToken()}`,
+            },
+        });
+        if (!res.ok) throw new Error("Failed to delete mosque");
+        return res.json();
+    },
 };

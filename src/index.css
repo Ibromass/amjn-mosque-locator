@@ -512,6 +512,29 @@ img {
   transform: translateX(4px);
 }
 
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 28px;
+  color: var(--gray-500);
+  font-size: 14px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-count {
+  color: var(--gray-700);
+  font-weight: 600;
+  min-width: 92px;
+  text-align: center;
+}
+
 /* ============================================
    DETAIL PAGE
    ============================================ */
@@ -558,6 +581,15 @@ img {
   align-items: center;
   justify-content: center;
   font-size: 40px;
+  flex-shrink: 0;
+}
+
+.detail-image {
+  width: 160px;
+  height: 110px;
+  border-radius: var(--radius-lg);
+  object-fit: cover;
+  border: 1px solid var(--gray-200);
   flex-shrink: 0;
 }
 
@@ -747,6 +779,19 @@ img {
 .form-group textarea {
   resize: vertical;
   min-height: 80px;
+}
+
+.form-group input[type="file"] {
+  padding: 10px;
+}
+
+.image-preview {
+  width: 180px;
+  height: 120px;
+  object-fit: cover;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  margin-top: 12px;
 }
 
 .form-actions {
@@ -1190,6 +1235,15 @@ img {
   
   .mosque-grid {
     grid-template-columns: 1fr;
+  }
+
+  .pagination-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pagination-controls {
+    justify-content: space-between;
   }
   
   .form-grid {
