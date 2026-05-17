@@ -3,7 +3,13 @@ import { API_BASE_URL } from "./config";
 
 const API_URL = `${API_BASE_URL}/api/mosque`;
 
-const getToken = () => JSON.parse(localStorage.getItem("adminToken"));
+const getToken = () => {
+    try {
+        return JSON.parse(localStorage.getItem("adminToken"));
+    } catch {
+        return null;
+    }
+};
 
 const unwrapValues = (value) => {
     if (Array.isArray(value)) return value;
@@ -13,11 +19,11 @@ const unwrapValues = (value) => {
     return value;
 };
 
-const normalizeImageUrls = (imageUrl) => {
-    const urls = unwrapValues(imageUrl);
-    if (Array.isArray(urls)) return urls.filter(Boolean);
-    if (typeof urls === "string" && urls.trim()) return [urls.trim()];
-    return [];
+// ✅ FIXED: Handle single string from backend
+const normalizeImageUrl = (imageUrl) => {
+    if (typeof imageUrl === "string" && imageUrl.trim()) return imageUrl.trim();
+    if (Array.isArray(imageUrl) && imageUrl.length > 0) return imageUrl[0]; // Take first if array
+    return null;
 };
 
 const normalizeMosque = (mosque) => {
@@ -36,7 +42,7 @@ const normalizeMosque = (mosque) => {
         latitude: Number(mosque.latitude ?? mosque.Latitude ?? 0),
         longitude: Number(mosque.longitude ?? mosque.Longitude ?? 0),
         dateCreated: mosque.dateCreated ?? mosque.DateCreated,
-        imageUrl: normalizeImageUrls(mosque.imageUrl ?? mosque.imageUrls ?? mosque.images ?? mosque.ImageUrl ?? mosque.ImageUrls),
+        imageUrl: normalizeImageUrl(mosque.imageUrl ?? mosque.ImageUrl), // ✅ Single string
     };
 };
 
@@ -53,7 +59,7 @@ export const MosqueService = {
         return normalizeMosques(await res.json());
     },
 
-    // ✅ GET SINGLE MOSQUE BY ID
+    // GET SINGLE MOSQUE BY ID
     getById: async (id) => {
         const res = await fetch(`${API_URL}/${id}`);
         if (!res.ok) throw new Error("Mosque not found");
@@ -69,7 +75,7 @@ export const MosqueService = {
         return normalizeMosques(await res.json());
     },
 
-    // CREATE
+    // CREATE - Send single string
     create: async (data) => {
         const res = await fetch(API_URL, {
             method: "POST",
@@ -77,13 +83,16 @@ export const MosqueService = {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${getToken()}`,
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify({
+                ...data,
+                imageUrl: data.imageUrl || null, // ✅ Send single string or null
+            }),
         });
         if (!res.ok) throw new Error("Failed to create mosque");
         return res.json();
     },
 
-    // UPDATE
+    // UPDATE - Send single string
     update: async (id, data) => {
         const res = await fetch(`${API_URL}/${id}`, {
             method: "PUT",
@@ -91,7 +100,10 @@ export const MosqueService = {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${getToken()}`,
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify({
+                ...data,
+                imageUrl: data.imageUrl || null, // ✅ Send single string or null
+            }),
         });
         if (!res.ok) throw new Error("Failed to update mosque");
         return res.json();
