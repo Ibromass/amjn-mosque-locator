@@ -2,15 +2,6 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { MosqueService } from "../Api/MosqueService"
 
-const fileToDataUrl = (file) => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(reader.result)
-        reader.onerror = () => reject(new Error("Failed to read image file"))
-        reader.readAsDataURL(file)
-    })
-}
-
 function AddMosque() {
     const nav = useNavigate()
     const [formData, setFormData] = useState({
@@ -25,23 +16,14 @@ function AddMosque() {
         longitude: '',
         imageUrl: ''
     })
-    const [imageFile, setImageFile] = useState(null)
-    const [imagePreview, setImagePreview] = useState("")
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
     }
 
-    const handleImageFileChange = (e) => {
-        const file = e.target.files?.[0]
-        setImageFile(file || null)
-        setImagePreview(file ? URL.createObjectURL(file) : "")
-    }
-
     const handleSubmit = async (e) => {
         e.preventDefault()
-        const uploadedImage = imageFile ? await fileToDataUrl(imageFile) : ""
-        const imageUrl = uploadedImage || formData.imageUrl.trim()
+        const imageUrl = formData.imageUrl.trim()
         
         const payload = {
             ...formData,
@@ -184,21 +166,15 @@ function AddMosque() {
                             />
                         </div>
 
-                        <div className="form-group full-width">
-                            <label>Upload Mosque Image</label>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageFileChange}
-                            />
-                            {imagePreview && (
+                        {formData.imageUrl && (
+                            <div className="form-group full-width">
                                 <img
                                     className="image-preview"
-                                    src={imagePreview}
+                                    src={formData.imageUrl}
                                     alt="Mosque preview"
                                 />
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="form-actions">

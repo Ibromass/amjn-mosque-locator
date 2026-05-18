@@ -2,15 +2,6 @@ import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { MosqueService } from "../Api/MosqueService"
 
-const fileToDataUrl = (file) => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(reader.result)
-        reader.onerror = () => reject(new Error("Failed to read image file"))
-        reader.readAsDataURL(file)
-    })
-}
-
 const firstImageUrl = (imageUrl) => {
     if (Array.isArray(imageUrl)) return imageUrl[0] || ""
     return imageUrl || ""
@@ -20,8 +11,6 @@ function EditMosque() {
     const nav = useNavigate()
     const [mosque, setMosque] = useState({})
     const { id } = useParams()
-    const [imageFile, setImageFile] = useState(null)
-    const [imagePreview, setImagePreview] = useState("")
 
     const [formData, setformData] = useState({
         name: "",
@@ -58,7 +47,6 @@ function EditMosque() {
                     longitude: data.longitude || "",
                     imageUrl: firstImageUrl(data.imageUrl)
                 })
-                setImagePreview(firstImageUrl(data.imageUrl))
             }
             catch (err) {
                 alert(err.message)
@@ -72,17 +60,10 @@ function EditMosque() {
         setformData({ ...formData, [e.target.name]: e.target.value })
     }
 
-    const handleImageFileChange = (e) => {
-        const file = e.target.files?.[0]
-        setImageFile(file || null)
-        setImagePreview(file ? URL.createObjectURL(file) : firstImageUrl(mosque.imageUrl))
-    }
-
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
-            const uploadedImage = imageFile ? await fileToDataUrl(imageFile) : ""
-            const imageUrl = uploadedImage || formData.imageUrl.trim()
+            const imageUrl = formData.imageUrl.trim()
             await MosqueService.update(mosque.id, {
                 ...formData,
                 latitude: Number(formData.latitude),
@@ -161,13 +142,11 @@ function EditMosque() {
                             <input type="url" name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="https://example.com/mosque.jpg" />
                         </div>
 
-                        <div className="form-group full-width">
-                            <label>Upload Mosque Image</label>
-                            <input type="file" accept="image/*" onChange={handleImageFileChange} />
-                            {imagePreview && (
-                                <img className="image-preview" src={imagePreview} alt="Mosque preview" />
-                            )}
-                        </div>
+                        {formData.imageUrl && (
+                            <div className="form-group full-width">
+                                <img className="image-preview" src={formData.imageUrl} alt="Mosque preview" />
+                            </div>
+                        )}
                     </div>
 
                     <div className="form-actions">
