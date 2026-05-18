@@ -41,13 +41,13 @@ function AddMosque() {
     const handleSubmit = async (e) => {
         e.preventDefault()
         const uploadedImage = imageFile ? await fileToDataUrl(imageFile) : ""
-        const images = [formData.imageUrl.trim(), uploadedImage].filter(Boolean)
+        const imageUrl = uploadedImage || formData.imageUrl.trim()
         
         const payload = {
             ...formData,
             latitude: Number(formData.latitude),
             longitude: Number(formData.longitude),
-            imageUrl: images
+            imageUrl
         }
         
         try {

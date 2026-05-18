@@ -26,6 +26,25 @@ const normalizeImageUrl = (imageUrl) => {
     return null;
 };
 
+const getErrorMessage = async (res, fallback) => {
+    try {
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+            const error = await res.json();
+            return error.message || error.title || error.error || fallback;
+        }
+        const text = await res.text();
+        return text || fallback;
+    } catch {
+        return fallback;
+    }
+};
+
+const buildMosquePayload = (data) => ({
+    ...data,
+    imageUrl: normalizeImageUrl(data.imageUrl),
+});
+
 const normalizeMosque = (mosque) => {
     if (!mosque) return mosque;
 
@@ -83,12 +102,9 @@ export const MosqueService = {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${getToken()}`,
             },
-            body: JSON.stringify({
-                ...data,
-                imageUrl: data.imageUrl || null, // ✅ Send single string or null
-            }),
+            body: JSON.stringify(buildMosquePayload(data)),
         });
-        if (!res.ok) throw new Error("Failed to create mosque");
+        if (!res.ok) throw new Error(await getErrorMessage(res, "Failed to create mosque"));
         return res.json();
     },
 
@@ -100,12 +116,9 @@ export const MosqueService = {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${getToken()}`,
             },
-            body: JSON.stringify({
-                ...data,
-                imageUrl: data.imageUrl || null, // ✅ Send single string or null
-            }),
+            body: JSON.stringify(buildMosquePayload(data)),
         });
-        if (!res.ok) throw new Error("Failed to update mosque");
+        if (!res.ok) throw new Error(await getErrorMessage(res, "Failed to update mosque"));
         return res.json();
     },
 

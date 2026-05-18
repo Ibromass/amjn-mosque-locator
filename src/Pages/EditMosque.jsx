@@ -82,12 +82,12 @@ function EditMosque() {
         e.preventDefault()
         try {
             const uploadedImage = imageFile ? await fileToDataUrl(imageFile) : ""
-            const images = [formData.imageUrl.trim(), uploadedImage].filter(Boolean)
+            const imageUrl = uploadedImage || formData.imageUrl.trim()
             await MosqueService.update(mosque.id, {
                 ...formData,
                 latitude: Number(formData.latitude),
                 longitude: Number(formData.longitude),
-                imageUrl: images,
+                imageUrl,
             })
             alert("Mosque updated successfully")
                nav("/");
