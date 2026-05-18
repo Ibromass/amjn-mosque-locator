@@ -45,6 +45,14 @@ const buildMosquePayload = (data) => ({
     imageUrl: normalizeImageUrl(data.imageUrl),
 });
 
+const request = async (url, options) => {
+    try {
+        return await fetch(url, options);
+    } catch (error) {
+        throw new Error(`Could not connect to API at ${url}. ${error.message}`);
+    }
+};
+
 const normalizeMosque = (mosque) => {
     if (!mosque) return mosque;
 
@@ -73,21 +81,21 @@ const normalizeMosques = (data) => {
 export const MosqueService = {
     // GET ALL MOSQUES
     getAll: async () => {
-        const res = await fetch(API_URL);
+        const res = await request(API_URL);
         if (!res.ok) throw new Error("Failed to fetch mosques");
         return normalizeMosques(await res.json());
     },
 
     // GET SINGLE MOSQUE BY ID
     getById: async (id) => {
-        const res = await fetch(`${API_URL}/${id}`);
+        const res = await request(`${API_URL}/${id}`);
         if (!res.ok) throw new Error("Mosque not found");
         return normalizeMosque(await res.json());
     },
 
     // GET NEARBY FROM BACKEND
     getNearby: async (lat, lng, radiusKm = 10) => {
-        const res = await fetch(
+        const res = await request(
             `${API_URL}/nearby?latitude=${lat}&longitude=${lng}&radiusKm=${radiusKm}`
         );
         if (!res.ok) throw new Error("Failed to fetch nearby mosques");
@@ -96,7 +104,7 @@ export const MosqueService = {
 
     // CREATE - Send single string
     create: async (data) => {
-        const res = await fetch(API_URL, {
+        const res = await request(API_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -110,7 +118,7 @@ export const MosqueService = {
 
     // UPDATE - Send single string
     update: async (id, data) => {
-        const res = await fetch(`${API_URL}/${id}`, {
+        const res = await request(`${API_URL}/${id}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -124,7 +132,7 @@ export const MosqueService = {
 
     // DELETE
     delete: async (id) => {
-        const res = await fetch(`${API_URL}/${id}`, {
+        const res = await request(`${API_URL}/${id}`, {
             method: "DELETE",
             headers: {
                 Authorization: `Bearer ${getToken()}`,
