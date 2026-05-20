@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
+import { CloudinaryService } from "../Api/CloudinaryService"
 import { MosqueService } from "../Api/MosqueService"
 
 const firstImageUrl = (imageUrl) => {
@@ -10,6 +11,7 @@ const firstImageUrl = (imageUrl) => {
 function EditMosque() {
     const nav = useNavigate()
     const [mosque, setMosque] = useState({})
+    const [uploadingImage, setUploadingImage] = useState(false)
     const { id } = useParams()
 
     const [formData, setformData] = useState({
@@ -58,6 +60,22 @@ function EditMosque() {
 
     const handleChange = (e) => {
         setformData({ ...formData, [e.target.name]: e.target.value })
+    }
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        try {
+            setUploadingImage(true)
+            const imageUrl = await CloudinaryService.uploadImage(file)
+            setformData((current) => ({ ...current, imageUrl }))
+        } catch (error) {
+            alert("Failed to upload image: " + error.message)
+        } finally {
+            setUploadingImage(false)
+            e.target.value = ""
+        }
     }
 
     const handleSubmit = async (e) => {
@@ -138,6 +156,19 @@ function EditMosque() {
                         </div>
 
                         <div className="form-group full-width">
+                            <label>Upload Image</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                disabled={uploadingImage}
+                            />
+                            {uploadingImage && (
+                                <p className="upload-status">Uploading image...</p>
+                            )}
+                        </div>
+
+                        <div className="form-group full-width">
                             <label>Image URL</label>
                             <input type="url" name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="https://example.com/mosque.jpg" />
                         </div>
@@ -153,8 +184,8 @@ function EditMosque() {
                         <button type="button" className="btn-secondary" onClick={() => nav("/")}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn-primary">
-                            👍 Update Mosque
+                        <button type="submit" className="btn-primary" disabled={uploadingImage}>
+                            {uploadingImage ? "Uploading..." : "Update Mosque"}
                         </button>
                     </div>
                 </form>

@@ -1,9 +1,11 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { CloudinaryService } from "../Api/CloudinaryService"
 import { MosqueService } from "../Api/MosqueService"
 
 function AddMosque() {
     const nav = useNavigate()
+    const [uploadingImage, setUploadingImage] = useState(false)
     const [formData, setFormData] = useState({
         name: '',
         address: '',
@@ -19,6 +21,23 @@ function AddMosque() {
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
+    }
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        try {
+            setUploadingImage(true)
+            const imageUrl = await CloudinaryService.uploadImage(file)
+            setFormData((current) => ({ ...current, imageUrl }))
+        } catch (err) {
+            alert("Failed to upload image: " + err.message)
+            console.error(err)
+        } finally {
+            setUploadingImage(false)
+            e.target.value = ""
+        }
     }
 
     const handleSubmit = async (e) => {
@@ -156,6 +175,19 @@ function AddMosque() {
                         </div>
 
                         <div className="form-group full-width">
+                            <label>Upload Image</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                disabled={uploadingImage}
+                            />
+                            {uploadingImage && (
+                                <p className="upload-status">Uploading image...</p>
+                            )}
+                        </div>
+
+                        <div className="form-group full-width">
                             <label>Image URL</label>
                             <input 
                                 type="url" 
@@ -181,8 +213,8 @@ function AddMosque() {
                         <button type="button" className="btn-secondary" onClick={() => nav("/")}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn-primary">
-                            ➕ Add Mosque
+                        <button type="submit" className="btn-primary" disabled={uploadingImage}>
+                            {uploadingImage ? "Uploading..." : "Add Mosque"}
                         </button>
                     </div>
                 </form>

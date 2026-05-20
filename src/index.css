@@ -785,6 +785,13 @@ img {
   padding: 10px;
 }
 
+.upload-status {
+  color: var(--green-dark);
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
 .image-preview {
   width: 180px;
   height: 120px;
