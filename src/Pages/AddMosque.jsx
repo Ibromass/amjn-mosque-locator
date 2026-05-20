@@ -1,10 +1,16 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { CloudinaryService } from "../Api/CloudinaryService"
+import { GoogleGeocoding } from "../Api/GoogleGeocoding"
 import { MosqueService } from "../Api/MosqueService"
 
 function AddMosque() {
     const nav = useNavigate()
+    const [coordinateLookup, setCoordinateLookup] = useState({
+        loading: false,
+        message: "",
+        error: "",
+    })
     const [uploadingImage, setUploadingImage] = useState(false)
     const [formData, setFormData] = useState({
         name: '',
@@ -37,6 +43,29 @@ function AddMosque() {
         } finally {
             setUploadingImage(false)
             e.target.value = ""
+        }
+    }
+
+    const handleFindCoordinates = async () => {
+        try {
+            setCoordinateLookup({ loading: true, message: "", error: "" })
+            const result = await GoogleGeocoding.findAhmadiyyaCoordinates(formData)
+            setFormData((current) => ({
+                ...current,
+                latitude: result.latitude.toFixed(7),
+                longitude: result.longitude.toFixed(7),
+            }))
+            setCoordinateLookup({
+                loading: false,
+                message: `Matched: ${result.formattedAddress}`,
+                error: "",
+            })
+        } catch (err) {
+            setCoordinateLookup({
+                loading: false,
+                message: "",
+                error: err.message,
+            })
         }
     }
 
@@ -172,6 +201,23 @@ function AddMosque() {
                                 placeholder="e.g., 3.3792" 
                                 step="any" 
                             />
+                        </div>
+
+                        <div className="form-group full-width">
+                            <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={handleFindCoordinates}
+                                disabled={coordinateLookup.loading}
+                            >
+                                {coordinateLookup.loading ? "Finding Coordinates..." : "Find Ahmadiyya Coordinates"}
+                            </button>
+                            {coordinateLookup.message && (
+                                <p className="lookup-status">{coordinateLookup.message}</p>
+                            )}
+                            {coordinateLookup.error && (
+                                <p className="lookup-status error">{coordinateLookup.error}</p>
+                            )}
                         </div>
 
                         <div className="form-group full-width">

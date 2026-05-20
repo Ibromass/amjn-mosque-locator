@@ -792,6 +792,17 @@ img {
   margin-top: 8px;
 }
 
+.lookup-status {
+  color: var(--green-dark);
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.lookup-status.error {
+  color: var(--red);
+}
+
 .image-preview {
   width: 180px;
   height: 120px;

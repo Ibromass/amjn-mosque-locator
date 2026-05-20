@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { CloudinaryService } from "../Api/CloudinaryService"
+import { GoogleGeocoding } from "../Api/GoogleGeocoding"
 import { MosqueService } from "../Api/MosqueService"
 
 const firstImageUrl = (imageUrl) => {
@@ -11,6 +12,11 @@ const firstImageUrl = (imageUrl) => {
 function EditMosque() {
     const nav = useNavigate()
     const [mosque, setMosque] = useState({})
+    const [coordinateLookup, setCoordinateLookup] = useState({
+        loading: false,
+        message: "",
+        error: "",
+    })
     const [uploadingImage, setUploadingImage] = useState(false)
     const { id } = useParams()
 
@@ -75,6 +81,29 @@ function EditMosque() {
         } finally {
             setUploadingImage(false)
             e.target.value = ""
+        }
+    }
+
+    const handleFindCoordinates = async () => {
+        try {
+            setCoordinateLookup({ loading: true, message: "", error: "" })
+            const result = await GoogleGeocoding.findAhmadiyyaCoordinates(formData)
+            setformData((current) => ({
+                ...current,
+                latitude: result.latitude.toFixed(7),
+                longitude: result.longitude.toFixed(7),
+            }))
+            setCoordinateLookup({
+                loading: false,
+                message: `Matched: ${result.formattedAddress}`,
+                error: "",
+            })
+        } catch (error) {
+            setCoordinateLookup({
+                loading: false,
+                message: "",
+                error: error.message,
+            })
         }
     }
 
@@ -153,6 +182,23 @@ function EditMosque() {
                         <div className="form-group">
                             <label>Longitude</label>
                             <input type="number" name="longitude" value={formData.longitude} onChange={handleChange} placeholder="e.g., 3.3792" step="any" />
+                        </div>
+
+                        <div className="form-group full-width">
+                            <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={handleFindCoordinates}
+                                disabled={coordinateLookup.loading}
+                            >
+                                {coordinateLookup.loading ? "Finding Coordinates..." : "Find Ahmadiyya Coordinates"}
+                            </button>
+                            {coordinateLookup.message && (
+                                <p className="lookup-status">{coordinateLookup.message}</p>
+                            )}
+                            {coordinateLookup.error && (
+                                <p className="lookup-status error">{coordinateLookup.error}</p>
+                            )}
                         </div>
 
                         <div className="form-group full-width">
