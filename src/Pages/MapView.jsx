@@ -171,7 +171,8 @@ function MapView({ setMosques }) {
                     <LoadScript
                         googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_KEY}
                         libraries={libraries}
-                    >                        <Autocomplete
+                    >
+                        <Autocomplete
                             options={autocompleteOptions}
                             onLoad={(ref) => (searchRef.current = ref)}
                             onPlaceChanged={() => {
@@ -200,9 +201,10 @@ function MapView({ setMosques }) {
                             options={{
                                 mapTypeControl: false,
                                 fullscreenControl: true,
-                                streetViewControl: false,
+                                streetViewControl: true,
                             }}
-                        >                            {userLocation && (
+                        >
+                            {userLocation && (
                                 <Marker
                                     key={`user-${userLocation.lat}-${userLocation.lng}`}
                                     position={userLocation}
