@@ -1014,10 +1014,35 @@ img {
 
 .map-container {
   position: relative;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  height: min(72vh, 640px);
+  min-height: 420px;
+  background: var(--gray-100);
+}
+
+.map-panel {
   border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--white);
   box-shadow: var(--shadow);
+}
+
+.map-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--gray-200);
+  color: var(--gray-700);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.map-panel-header small {
+  color: var(--gray-500);
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .map-search-box {
@@ -1044,6 +1069,78 @@ img {
 
 .map-search-box input:focus {
   border-color: var(--green);
+}
+
+.map-search-input {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  width: min(400px, calc(100% - 24px));
+  padding: 12px 16px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  color: var(--gray-800);
+  font-size: 14px;
+  outline: none;
+  box-shadow: var(--shadow-md);
+}
+
+.map-search-input:focus {
+  border-color: var(--green);
+}
+
+.map-clear-route {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--red);
+  color: var(--white);
+  border: 0;
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+}
+
+.map-info-window {
+  min-width: 200px;
+  padding: 8px;
+}
+
+.map-info-window h4 {
+  margin-bottom: 8px;
+  color: var(--green);
+}
+
+.map-info-window p {
+  margin-bottom: 8px;
+  color: var(--gray-600);
+  font-size: 14px;
+}
+
+.map-directions-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 16px;
+  background: var(--green);
+  color: var(--white);
+  border: 0;
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
 }
 
 /* ============================================
