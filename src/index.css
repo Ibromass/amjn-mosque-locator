@@ -1216,6 +1216,8 @@ img {
   .sidebar {
     transform: translateX(-100%);
     width: 280px;
+    padding-top: 76px;
+    z-index: 100;
   }
   
   .sidebar.open {
@@ -1228,6 +1230,11 @@ img {
   
   .mobile-menu-toggle {
     display: flex;
+    top: 10px;
+    left: 14px;
+    z-index: 120;
+    width: 44px;
+    height: 44px;
   }
   
   .main-content {
@@ -1236,15 +1243,23 @@ img {
   
   .content-area {
     padding: 20px;
-    padding-top: 80px;
   }
   
   .top-bar {
-    padding: 0 20px;
+    min-height: 64px;
+    height: auto;
+    padding: 10px 16px 10px 72px;
+    gap: 12px;
   }
   
   .search-wrapper {
     max-width: none;
+    min-width: 0;
+  }
+
+  .search-input {
+    font-size: 14px;
+    padding-right: 10px;
   }
   
   .location-indicator span {
@@ -1328,6 +1343,16 @@ img {
     font-size: 32px;
   }
   
+  .form-panel {
+    max-width: none;
+    width: 100%;
+  }
+
+  .map-search-input {
+    width: calc(100vw - 32px) !important;
+    max-width: 400px;
+  }
+
   .form-panel {
     padding: 24px;
   }

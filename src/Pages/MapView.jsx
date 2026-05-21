@@ -18,6 +18,10 @@ const containerStyle = {
 };
 
 const libraries = ["places"];
+const autocompleteOptions = {
+    componentRestrictions: { country: "ng" },
+    fields: ["geometry", "formatted_address", "name"],
+};
 
 const getNearbyMosques = (mosques, radiusKm = 10) => {
     return mosques.filter((m) => parseFloat(m.distanceKm) <= radiusKm);
@@ -185,6 +189,7 @@ function MapView({ setMosques }) {
                     >
                         {/* ✅ Input is direct child of Autocomplete, properly sized */}
                         <Autocomplete
+                            options={autocompleteOptions}
                             onLoad={(ref) => (searchRef.current = ref)}
                             onPlaceChanged={() => {
                                 const place = searchRef.current.getPlace();
@@ -199,6 +204,7 @@ function MapView({ setMosques }) {
                             }}
                         >
                             <input
+                                className="map-search-input"
                                 placeholder="Search location..."
                                 style={{
                                     position: "absolute",
