@@ -803,6 +803,37 @@ img {
   color: var(--red);
 }
 
+.coordinate-picker {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--white);
+}
+
+.coordinate-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--gray-200);
+  color: var(--gray-700);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.coordinate-picker-header small {
+  color: var(--gray-500);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.coordinate-picker-map {
+  width: 100%;
+  height: 280px;
+  background: var(--gray-100);
+}
+
 .image-preview {
   width: 180px;
   height: 120px;
@@ -1346,6 +1377,16 @@ img {
   .form-panel {
     max-width: none;
     width: 100%;
+  }
+
+  .coordinate-picker-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .coordinate-picker-map {
+    height: 240px;
   }
 
   .map-search-input {

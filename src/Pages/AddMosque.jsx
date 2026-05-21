@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { CloudinaryService } from "../Api/CloudinaryService"
 import { GoogleGeocoding } from "../Api/GoogleGeocoding"
 import { MosqueService } from "../Api/MosqueService"
+import CoordinatePicker from "../Components/CoordinatePicker"
 
 function AddMosque() {
     const nav = useNavigate()
@@ -67,6 +68,14 @@ function AddMosque() {
                 error: err.message,
             })
         }
+    }
+
+    const handleCoordinateChange = ({ lat, lng }) => {
+        setFormData((current) => ({
+            ...current,
+            latitude: lat.toFixed(7),
+            longitude: lng.toFixed(7),
+        }))
     }
 
     const handleSubmit = async (e) => {
@@ -218,6 +227,14 @@ function AddMosque() {
                             {coordinateLookup.error && (
                                 <p className="lookup-status error">{coordinateLookup.error}</p>
                             )}
+                        </div>
+
+                        <div className="form-group full-width">
+                            <CoordinatePicker
+                                latitude={formData.latitude}
+                                longitude={formData.longitude}
+                                onChange={handleCoordinateChange}
+                            />
                         </div>
 
                         <div className="form-group full-width">

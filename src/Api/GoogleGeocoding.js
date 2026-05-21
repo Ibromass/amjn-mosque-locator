@@ -1,7 +1,7 @@
 const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_KEY;
 let googleMapsPromise;
 
-const loadGoogleMaps = () => {
+export const loadGoogleMaps = () => {
     if (window.google?.maps?.Geocoder) {
         return Promise.resolve(window.google);
     }
@@ -14,7 +14,9 @@ const loadGoogleMaps = () => {
 
     if (!googleMapsPromise) {
         googleMapsPromise = new Promise((resolve, reject) => {
-            const existingScript = document.querySelector("script[data-amjn-google-maps]");
+            const existingScript = document.querySelector(
+                "#script-loader, script[data-amjn-google-maps], script[src*='maps.googleapis.com/maps/api/js']"
+            );
             if (existingScript) {
                 existingScript.addEventListener("load", () => resolve(window.google));
                 existingScript.addEventListener("error", () => reject(new Error("Failed to load Google Maps")));
@@ -22,6 +24,7 @@ const loadGoogleMaps = () => {
             }
 
             const script = document.createElement("script");
+            script.id = "script-loader";
             script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places`;
             script.async = true;
             script.defer = true;

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { CloudinaryService } from "../Api/CloudinaryService"
 import { GoogleGeocoding } from "../Api/GoogleGeocoding"
 import { MosqueService } from "../Api/MosqueService"
+import CoordinatePicker from "../Components/CoordinatePicker"
 
 const firstImageUrl = (imageUrl) => {
     if (Array.isArray(imageUrl)) return imageUrl[0] || ""
@@ -107,6 +108,14 @@ function EditMosque() {
         }
     }
 
+    const handleCoordinateChange = ({ lat, lng }) => {
+        setformData((current) => ({
+            ...current,
+            latitude: lat.toFixed(7),
+            longitude: lng.toFixed(7),
+        }))
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
@@ -199,6 +208,14 @@ function EditMosque() {
                             {coordinateLookup.error && (
                                 <p className="lookup-status error">{coordinateLookup.error}</p>
                             )}
+                        </div>
+
+                        <div className="form-group full-width">
+                            <CoordinatePicker
+                                latitude={formData.latitude}
+                                longitude={formData.longitude}
+                                onChange={handleCoordinateChange}
+                            />
                         </div>
 
                         <div className="form-group full-width">

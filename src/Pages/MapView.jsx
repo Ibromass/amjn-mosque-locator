@@ -34,6 +34,7 @@ function MapView({ setMosques }) {
     const [map, setMap] = useState(null);
     const [loading, setLoading] = useState(true);
     const [directions, setDirections] = useState(null);
+    const [searchedLocation, setSearchedLocation] = useState(null);
 
     const searchRef = useRef(null);
     const rawMosquesRef = useRef([]);
@@ -198,7 +199,7 @@ function MapView({ setMosques }) {
                                     lat: place.geometry.location.lat(),
                                     lng: place.geometry.location.lng(),
                                 };
-                                setUserLocation(newLoc);
+                                setSearchedLocation(newLoc);
                                 map?.panTo(newLoc);
                                 map?.setZoom(14);
                             }}
@@ -259,6 +260,21 @@ function MapView({ setMosques }) {
                                     zIndex={999}
                                     label={{
                                         text: "You",
+                                        color: "#ffffff",
+                                        fontSize: "11px",
+                                        fontWeight: "700",
+                                    }}
+                                />
+                            )}
+
+                            {searchedLocation && (
+                                <Marker
+                                    key={`search-${searchedLocation.lat}-${searchedLocation.lng}`}
+                                    position={searchedLocation}
+                                    icon="http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                                    zIndex={998}
+                                    label={{
+                                        text: "Search",
                                         color: "#ffffff",
                                         fontSize: "11px",
                                         fontWeight: "700",
