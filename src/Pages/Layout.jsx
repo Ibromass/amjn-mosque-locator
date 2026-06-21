@@ -1,17 +1,19 @@
-import { Outlet, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { Outlet, useLocation, useOutletContext } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
 import SideBar from "../Components/SideBar";
 import NavBar from "../Components/NavBar";
 import Footer from "../Components/Footer";
 
 function Layout() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [onSearch, setOnSearch] = useState(null);
     const location = useLocation();
 
     // Close mobile menu on route change
     useEffect(() => {
         setMobileMenuOpen(false);
-    }, [location]);
+        setOnSearch(null); // reset search handler when navigating away
+    }, [location.pathname]);
 
     // Close mobile menu on escape key
     useEffect(() => {
@@ -22,10 +24,14 @@ function Layout() {
         return () => window.removeEventListener('keydown', handleEscape);
     }, []);
 
+    const registerSearch = useCallback((handler) => {
+        setOnSearch(() => handler);
+    }, []);
+
     return (
         <div className="app-layout">
             {/* Mobile Menu Toggle */}
-            <button 
+            <button
                 className="mobile-menu-toggle"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 aria-label="Toggle menu"
@@ -34,7 +40,7 @@ function Layout() {
             </button>
 
             {/* Overlay for mobile */}
-            <div 
+            <div
                 className={`sidebar-overlay ${mobileMenuOpen ? 'active' : ''}`}
                 onClick={() => setMobileMenuOpen(false)}
             />
@@ -42,9 +48,11 @@ function Layout() {
             <SideBar isOpen={mobileMenuOpen} />
 
             <div className="main-content">
-                <NavBar />
+                {/* Single shared NavBar — search handler is registered by the active page */}
+                <NavBar onSearch={onSearch} />
+
                 <div className="content-area">
-                    <Outlet />
+                    <Outlet context={{ registerSearch }} />
                 </div>
                 <Footer />
             </div>

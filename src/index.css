@@ -326,6 +326,42 @@ img {
   color: var(--green);
 }
 
+/* Clickable location button */
+.location-indicator--btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.location-indicator--btn:hover {
+  border-color: var(--gray-200);
+  background: var(--gray-50);
+  color: var(--gray-700);
+}
+
+.location-indicator--btn.found {
+  color: var(--green-dark);
+}
+
+.location-indicator--btn.denied {
+  color: var(--red);
+}
+
+.location-indicator--btn.detecting {
+  color: var(--gray-400);
+  cursor: default;
+}
+
+.location-spinner {
+  animation: spin 1s linear infinite;
+}
+
 /* ============================================
    PAGE HEADERS
    ============================================ */
@@ -1144,6 +1180,603 @@ img {
 }
 
 /* ============================================
+   NEWS PAGE
+   ============================================ */
+
+.news-page {
+  max-width: 1100px;
+}
+
+.news-section {
+  margin-bottom: 48px;
+}
+
+.news-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.news-section-header .section-title {
+  margin-bottom: 0;
+}
+
+.news-section-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--green);
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.news-section-link:hover {
+  color: var(--green-dark);
+}
+
+/* Live badge */
+.live-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--red);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  margin-left: 10px;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Sermon card */
+.sermon-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 32px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  color: var(--gray-500);
+  font-size: 15px;
+}
+
+.sermon-card {
+  display: flex;
+  gap: 28px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-left: 4px solid var(--green);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+}
+
+.sermon-card-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--green);
+  color: var(--white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.sermon-card-body {
+  flex: 1;
+}
+
+.sermon-delivered {
+  font-size: 13px;
+  color: var(--gray-500);
+  margin-bottom: 10px;
+}
+
+.sermon-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+.sermon-summary {
+  font-size: 15px;
+  color: var(--gray-600);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.sermon-offline-note {
+  font-size: 13px;
+  color: var(--gray-400);
+  margin-bottom: 16px;
+  font-style: italic;
+}
+
+.sermon-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* News cards grid */
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.news-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.news-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.news-tag {
+  display: inline-block;
+  background: var(--green-pale);
+  color: var(--green-dark);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+  width: fit-content;
+}
+
+.news-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-900);
+  line-height: 1.4;
+}
+
+.news-card-date {
+  font-size: 13px;
+  color: var(--gray-400);
+}
+
+.news-card-summary {
+  font-size: 14px;
+  color: var(--gray-600);
+  line-height: 1.65;
+  flex: 1;
+}
+
+.news-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--green);
+  font-weight: 600;
+  margin-top: auto;
+  transition: color 0.15s ease;
+}
+
+.news-card-link:hover {
+  color: var(--green-dark);
+}
+
+/* Social channels grid */
+.socials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.social-channel-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  transition: all 0.15s ease;
+  color: var(--gray-800);
+}
+
+.social-channel-card:hover {
+  border-color: var(--green);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.social-channel-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.social-channel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.social-channel-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.social-channel-sub {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.social-channel-arrow {
+  font-size: 11px;
+  color: var(--gray-400);
+  flex-shrink: 0;
+}
+
+/* footer tagline */
+.footer-tagline {
+  margin-top: 8px;
+  color: var(--green-dark);
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .sermon-card {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .sermon-card-icon {
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
+  }
+
+  .sermon-title {
+    font-size: 17px;
+  }
+
+  .sermon-actions {
+    flex-direction: column;
+  }
+
+  .sermon-actions a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .news-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .socials-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .socials-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   MOSQUE MAP SEARCH
+   ============================================ */
+
+.mosque-map-search {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  width: min(420px, calc(100% - 24px));
+}
+
+.mosque-map-search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.mosque-map-search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--green);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.mosque-map-search-spinner {
+  position: absolute;
+  right: 14px;
+  color: var(--gray-400);
+  font-size: 14px;
+  animation: spin 1s linear infinite;
+}
+
+.mosque-map-search-input {
+  width: 100%;
+  padding: 12px 40px 12px 40px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  color: var(--gray-800);
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  box-shadow: var(--shadow-md);
+  transition: border-color 0.15s ease;
+}
+
+.mosque-map-search-input:focus {
+  border-color: var(--green);
+}
+
+.mosque-map-search-input::placeholder {
+  color: var(--gray-400);
+}
+
+.mosque-map-search-dropdown {
+  list-style: none;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  margin-top: 4px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.mosque-map-search-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.mosque-map-search-item:last-child {
+  border-bottom: none;
+}
+
+.mosque-map-search-item:hover {
+  background: var(--green-pale);
+}
+
+.mosque-map-search-item-icon {
+  color: var(--green);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.mosque-map-search-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mosque-map-search-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mosque-map-search-item-sub {
+  font-size: 12px;
+  color: var(--gray-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mosque-map-search-item-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-500);
+  background: var(--gray-100);
+  padding: 2px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.mosque-map-search-empty {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  margin-top: 4px;
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--gray-500);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+
+/* ============================================
+   NEAREST AHMADIYYA BANNER
+   ============================================ */
+
+.ahmadiyya-banner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: linear-gradient(135deg, var(--green-pale) 0%, #f0fdf4 100%);
+  border: 1px solid var(--green-light);
+  border-left: 4px solid var(--green);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.ahmadiyya-banner-icon {
+  width: 52px;
+  height: 52px;
+  background: var(--green);
+  color: var(--white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.ahmadiyya-banner-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ahmadiyya-banner-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--green-dark);
+}
+
+.ahmadiyya-banner-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gray-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ahmadiyya-banner-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gray-500);
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.ahmadiyya-banner-meta svg {
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+.ahmadiyya-banner-distance {
+  background: var(--green);
+  color: var(--white);
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ahmadiyya-banner-source {
+  color: var(--gray-400);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.ahmadiyya-banner-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* Map View Ahmadiyya badge */
+.map-ahmadiyya-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #fefce8;
+  border-bottom: 1px solid #fde68a;
+  color: #78350f;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.map-ahmadiyya-badge svg {
+  color: #d97706;
+  flex-shrink: 0;
+}
+
+.map-ahmadiyya-badge span {
+  flex: 1;
+}
+
+.map-ahmadiyya-badge-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #d97706;
+  color: var(--white);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.map-ahmadiyya-badge-link:hover {
+  background: #b45309;
+}
+
+@media (max-width: 768px) {
+  .ahmadiyya-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .ahmadiyya-banner-name {
+    white-space: normal;
+  }
+
+  .ahmadiyya-banner-actions {
+    width: 100%;
+  }
+
+  .ahmadiyya-banner-actions a,
+  .ahmadiyya-banner-actions .btn-primary,
+  .ahmadiyya-banner-actions .btn-outline {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* ============================================
    FOOTER
    ============================================ */
 
@@ -1455,12 +2088,318 @@ img {
   }
 }
 
+/* ============================================
+   SIDEBAR — LOGO BADGE
+   ============================================ */
+
+.sidebar-logo-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: var(--green);
+  border-radius: 12px;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 3px 10px rgba(22, 163, 74, 0.35);
+}
+
+.sidebar-logo-img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  display: block;
+}
+
+/* ============================================
+   ONBOARDING OVERLAY — BOLD REDESIGN
+   ============================================ */
+
+@keyframes onb-fade-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes onb-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes onb-card-in  { from { opacity: 0; transform: translateY(32px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes onb-card-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.94); } }
+@keyframes onb-slide-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+.onb-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(6px);
+  animation: onb-fade-in 0.3s ease both;
+}
+.onb-overlay--exit { animation: onb-fade-out 0.4s ease both; }
+
+/* ── Card shell ── */
+.onb-card {
+  position: relative;
+  background: var(--white);
+  border-radius: 24px;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.28);
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: onb-card-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.onb-card--exit { animation: onb-card-out 0.4s ease both; }
+
+/* ── WELCOME SLIDE ── */
+.onb-welcome-slide {
+  display: flex;
+  flex-direction: column;
+  animation: onb-slide-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Green header section */
+.onb-header {
+  background: var(--green);
+  padding: 44px 32px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.onb-logo-circle {
+  width: 96px;
+  height: 96px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+  overflow: hidden;
+}
+
+.onb-logo-img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  display: block;
+}
+
+.onb-app-name {
+  font-size: 28px;
+  font-weight: 900;
+  color: #fff;
+  margin: 0;
+  line-height: 1.15;
+  letter-spacing: -0.3px;
+}
+
+.onb-org-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.80);
+  margin: 0;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* White body section of welcome */
+.onb-welcome-body {
+  padding: 28px 36px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: center;
+}
+
+.onb-welcome-desc {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--gray-600);
+  margin: 0;
+}
+
+.onb-tagline {
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 700;
+  color: var(--green);
+  margin: 0;
+}
+
+/* ── FEATURE SLIDES ── */
+.onb-feature-slide {
+  padding: 52px 36px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 300px;
+  animation: onb-slide-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.onb-skip {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  color: var(--gray-500);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 20px;
+  transition: background 0.15s ease, color 0.15s ease;
+  letter-spacing: 0.02em;
+}
+.onb-skip:hover { background: rgba(0,0,0,0.1); color: var(--gray-700); }
+
+.onb-emoji-box {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.onb-emoji {
+  font-size: 46px;
+  line-height: 1;
+  display: block;
+}
+
+.onb-feat-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--gray-900);
+  margin: 0;
+  line-height: 1.2;
+  letter-spacing: -0.3px;
+}
+
+.onb-feat-body {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--gray-600);
+  margin: 0;
+}
+
+.onb-feat-highlight {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 9px 16px;
+  border-radius: 20px;
+  align-self: flex-start;
+  letter-spacing: 0.01em;
+}
+
+/* ── DOT INDICATORS ── */
+.onb-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 36px 0;
+}
+
+.onb-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--gray-300);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.onb-dot--active {
+  width: 28px;
+  border-radius: 5px;
+  background: var(--green);
+}
+
+/* ── NAVIGATION ── */
+.onb-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 36px 32px;
+}
+
+.onb-btn-prev {
+  background: none;
+  border: 2px solid var(--gray-200);
+  color: var(--gray-600);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px 22px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.onb-btn-prev:hover { background: var(--gray-50); border-color: var(--gray-400); }
+
+.onb-btn-next {
+  background: var(--green);
+  color: var(--white);
+  border: none;
+  font-size: 15px;
+  font-weight: 800;
+  padding: 13px 32px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: auto;
+  letter-spacing: 0.01em;
+}
+.onb-btn-next:hover {
+  background: var(--green-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(22, 163, 74, 0.35);
+}
+
+.onb-btn-get-started {
+  font-size: 16px;
+  padding: 14px 36px;
+  letter-spacing: 0.02em;
+}
+.onb-btn-get-started:hover {
+  background: var(--green-dark);
+  box-shadow: 0 8px 20px rgba(22, 163, 74, 0.40);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 520px) {
+  .onb-card { border-radius: 18px; }
+  .onb-header { padding: 36px 24px 28px; }
+  .onb-app-name { font-size: 24px; }
+  .onb-logo-circle { width: 78px; height: 78px; border-radius: 18px; }
+  .onb-welcome-body { padding: 24px 24px 0; }
+  .onb-feature-slide { padding: 48px 24px 0; }
+  .onb-feat-title { font-size: 22px; }
+  .onb-dots { padding: 20px 24px 0; }
+  .onb-nav { padding: 16px 24px 28px; }
+  .onb-btn-next { padding: 12px 24px; font-size: 14px; }
+  .onb-btn-get-started { padding: 13px 28px; font-size: 15px; }
+}
+
 @media (max-width: 480px) {
   .content-area {
     padding: 16px;
     padding-top: 72px;
   }
-  
+
   .card-image {
     height: 140px;
   }
@@ -1498,4 +2437,298 @@ img {
   .login-box {
     padding: 28px;
   }
+}
+
+/* ============================================
+   QIBLAH COMPASS PAGE
+   ============================================ */
+
+.qiblah-page {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Facing banner */
+.qiblah-aligned-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--green);
+  color: white;
+  font-weight: 800;
+  font-size: 16px;
+  padding: 16px 24px;
+  border-radius: var(--radius-lg);
+  animation: pulse-green 1.5s ease infinite;
+}
+
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4); }
+  50%       { box-shadow: 0 0 0 12px rgba(22, 163, 74, 0); }
+}
+
+/* Main card */
+.qiblah-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Status strip */
+.qiblah-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.qiblah-status--loading {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.qiblah-status--ok {
+  background: var(--green-pale);
+  color: var(--green-dark);
+}
+
+.qiblah-status--error {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.qiblah-inline-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  padding: 0 2px;
+  font-size: 13px;
+  margin-left: 4px;
+}
+
+.qiblah-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Compass area */
+.qiblah-compass-wrap {
+  padding: 28px 28px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qiblah-compass-svg {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  display: block;
+}
+
+/* Placeholder (before location) */
+.qiblah-compass-placeholder {
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: var(--gray-50);
+  border: 2px dashed var(--gray-300);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 24px;
+}
+
+.qiblah-compass-placeholder--error {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.qiblah-placeholder-icon {
+  font-size: 64px;
+  color: var(--gray-300);
+  animation: spin 4s linear infinite;
+}
+
+.qiblah-compass-placeholder p {
+  font-size: 15px;
+  color: var(--gray-500);
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Info row */
+.qiblah-info-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--gray-100);
+}
+
+.qiblah-info-card {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qiblah-info-card:first-child {
+  border-right: 1px solid var(--gray-100);
+}
+
+.qiblah-info-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.qiblah-info-value {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--gray-900);
+  line-height: 1.1;
+}
+
+.qiblah-info-dir {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+/* Compass prompt / live strip */
+.qiblah-compass-prompt {
+  padding: 16px 20px;
+  border-top: 1px solid var(--gray-100);
+}
+
+.qiblah-compass-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--green);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.qiblah-compass-btn:hover {
+  background: var(--green-dark);
+  transform: translateY(-1px);
+}
+
+.qiblah-compass-denied {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--gray-600);
+  background: var(--gray-50);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+}
+
+.qiblah-compass-live {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green-dark);
+  background: var(--green-pale);
+  border-top: 1px solid #bbf7d0;
+}
+
+.qiblah-live-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulse-dot 1.2s ease infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.7); }
+}
+
+/* Guide section */
+.qiblah-guide {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.qiblah-guide h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qiblah-guide-list {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--gray-600);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.qiblah-guide-note {
+  background: var(--green-pale);
+  color: var(--green-dark);
+  font-size: 13px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .qiblah-info-value { font-size: 22px; }
+  .qiblah-compass-wrap { padding: 20px 16px 16px; }
+  .qiblah-compass-placeholder { width: 240px; height: 240px; }
+  .qiblah-placeholder-icon { font-size: 52px; }
 }

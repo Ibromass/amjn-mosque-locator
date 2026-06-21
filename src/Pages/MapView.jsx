@@ -1,26 +1,25 @@
 import {
     GoogleMap,
-    LoadScript,
+    useJsApiLoader,
     Marker,
     InfoWindow,
-    Autocomplete,
     DirectionsRenderer,
 } from "@react-google-maps/api";
+import MosqueMapSearch from "../Components/MosqueMapSearch";
 import { useEffect, useRef, useState } from "react";
 import { MosqueService } from "../Api/MosqueService";
 import { addDistanceToMosques } from "../Api/DistanceHelper";
-import { FaDirections, FaMapMarkedAlt, FaTimes } from "react-icons/fa";
+import { FaDirections, FaMapMarkedAlt, FaTimes, FaMosque, FaMapMarkerAlt } from "react-icons/fa";
+import { calculateDistance } from "../Api/Location";
 
 const containerStyle = {
     width: "100%",
     height: "100%",
 };
 
-const libraries = ["places"];
-const autocompleteOptions = {
-    componentRestrictions: { country: "ng" },
-    fields: ["geometry", "formatted_address", "name"],
-};
+const LIBRARIES = ["places"];
+
+const GOLD_MARKER = "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png";
 
 const getNearbyMosques = (mosques, radiusKm = 10) => {
     return mosques.filter((m) => parseFloat(m.distanceKm) <= radiusKm);
@@ -37,10 +36,16 @@ function MapView({ setMosques }) {
     const [map, setMap] = useState(null);
     const [loading, setLoading] = useState(true);
     const [directions, setDirections] = useState(null);
-    const [searchedLocation, setSearchedLocation] = useState(null);
+    const [ahmadiyyaPlaces, setAhmadiyyaPlaces] = useState([]);
+    const [nearestAhmadiyya, setNearestAhmadiyya] = useState(null);
 
-    const searchRef = useRef(null);
     const rawMosquesRef = useRef([]);
+    const ahmadiyyaSearchedRef = useRef(false);
+
+    const { isLoaded } = useJsApiLoader({
+        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_KEY || "",
+        libraries: LIBRARIES,
+    });
 
     // Initial load - fetch mosques and get user location once
     useEffect(() => {
@@ -109,7 +114,71 @@ function MapView({ setMosques }) {
         }
     }, [map, userLocation, mosques]);
 
+    // Search Google Places for Ahmadiyya mosques once the map + user location are ready
+    useEffect(() => {
+        if (!map || !userLocation || ahmadiyyaSearchedRef.current) return;
+        ahmadiyyaSearchedRef.current = true;
+
+        const service = new window.google.maps.places.PlacesService(map);
+        service.nearbySearch(
+            {
+                location: new window.google.maps.LatLng(userLocation.lat, userLocation.lng),
+                radius: 20000,
+                keyword: "Ahmadiyya mosque",
+            },
+            (results, status) => {
+                if (
+                    status !== window.google.maps.places.PlacesServiceStatus.OK ||
+                    !results?.length
+                ) return;
+
+                const places = results
+                    .filter((r) => r.geometry?.location)
+                    .map((r) => ({
+                        id: r.place_id,
+                        name: r.name,
+                        address: r.vicinity,
+                        latitude: r.geometry.location.lat(),
+                        longitude: r.geometry.location.lng(),
+                        placeId: r.place_id,
+                        rating: r.rating,
+                    }));
+
+                setAhmadiyyaPlaces(places);
+
+                // Find the nearest for the map info badge
+                const sorted = places
+                    .map((p) => ({
+                        ...p,
+                        dist: calculateDistance(
+                            userLocation.lat, userLocation.lng,
+                            p.latitude, p.longitude
+                        ),
+                    }))
+                    .sort((a, b) => a.dist - b.dist);
+                if (sorted.length > 0) setNearestAhmadiyya(sorted[0]);
+            }
+        );
+    }, [map, userLocation]);
+
     const onLoad = (mapInstance) => setMap(mapInstance);
+
+    const handleMosqueSelect = (result) => {
+        if (!result.latitude || !result.longitude) return;
+        const pos = { lat: result.latitude, lng: result.longitude };
+        map?.panTo(pos);
+        map?.setZoom(16);
+        // Open the info window for this mosque
+        setSelected({
+            name: result.name,
+            latitude: result.latitude,
+            longitude: result.longitude,
+            distanceKm: result.dist?.toFixed(2),
+            address: result.subtitle,
+            id: result.source === "database" ? result.id : null,
+        });
+        setDirections(null);
+    };
 
     const showDirectionsOnMap = (mosque) => {
         if (!userLocation || !window.google) return;
@@ -143,7 +212,7 @@ function MapView({ setMosques }) {
                 <p>Explore mosques on the interactive map</p>
             </div>
 
-            {loading ? (
+            {loading || !isLoaded ? (
                 <div className="empty-state">
                     <div
                         className="loading-spinner"
@@ -157,6 +226,29 @@ function MapView({ setMosques }) {
                         <span>Location Preview</span>
                         <small>Search, select a marker, or get directions</small>
                     </div>
+
+                    {/* Nearest Ahmadiyya badge */}
+                    {nearestAhmadiyya && (
+                        <div className="map-ahmadiyya-badge">
+                            <FaMosque />
+                            <span>
+                                <strong>Nearest Ahmadiyya:</strong>{" "}
+                                {nearestAhmadiyya.name}
+                                {nearestAhmadiyya.dist != null && (
+                                    <> — {nearestAhmadiyya.dist.toFixed(1)} km</>
+                                )}
+                            </span>
+                            <a
+                                href={`https://www.google.com/maps/dir/?api=1&destination=${nearestAhmadiyya.latitude},${nearestAhmadiyya.longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="map-ahmadiyya-badge-link"
+                            >
+                                <FaDirections /> Directions
+                            </a>
+                        </div>
+                    )}
+
                     <div className="map-container">
                     {/* Clear Route button */}
                     {directions && (
@@ -168,30 +260,11 @@ function MapView({ setMosques }) {
                         </button>
                     )}
 
-                    <LoadScript
-                        googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_KEY}
-                        libraries={libraries}
-                    >
-                        <Autocomplete
-                            options={autocompleteOptions}
-                            onLoad={(ref) => (searchRef.current = ref)}
-                            onPlaceChanged={() => {
-                                const place = searchRef.current.getPlace();
-                                if (!place.geometry) return;
-                                const newLoc = {
-                                    lat: place.geometry.location.lat(),
-                                    lng: place.geometry.location.lng(),
-                                };
-                                setSearchedLocation(newLoc);
-                                map?.panTo(newLoc);
-                                map?.setZoom(14);
-                            }}
-                        >
-                            <input
-                                className="map-search-input"
-                                placeholder="Search location..."
-                            />
-                        </Autocomplete>
+                        <MosqueMapSearch
+                            mosques={mosques}
+                            userLocation={userLocation}
+                            onSelect={handleMosqueSelect}
+                        />
 
                         <GoogleMap
                             mapContainerStyle={containerStyle}
@@ -219,22 +292,7 @@ function MapView({ setMosques }) {
                                 />
                             )}
 
-                            {searchedLocation && (
-                                <Marker
-                                    key={`search-${searchedLocation.lat}-${searchedLocation.lng}`}
-                                    position={searchedLocation}
-                                    icon="http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-                                    zIndex={998}
-                                    label={{
-                                        text: "Search",
-                                        color: "#ffffff",
-                                        fontSize: "11px",
-                                        fontWeight: "700",
-                                    }}
-                                />
-                            )}
-
-                            {/* Mosque markers */}
+                            {/* AMJN database mosque markers (green) */}
                             {mosques.filter(hasValidCoordinates).map((m, i) => (
                                 <Marker
                                     key={m.id || `${m.latitude}-${m.longitude}-${i}`}
@@ -257,6 +315,30 @@ function MapView({ setMosques }) {
                                 />
                             ))}
 
+                            {/* Ahmadiyya mosques from Google Places (gold markers) */}
+                            {ahmadiyyaPlaces.map((p) => (
+                                <Marker
+                                    key={`ahmadiyya-${p.id}`}
+                                    position={{ lat: p.latitude, lng: p.longitude }}
+                                    icon={GOLD_MARKER}
+                                    zIndex={997}
+                                    label={{
+                                        text: p.name,
+                                        color: "#78350f",
+                                        fontSize: "11px",
+                                        fontWeight: "700",
+                                    }}
+                                    onClick={() => {
+                                        setSelected({
+                                            ...p,
+                                            distanceKm: p.dist?.toFixed(2),
+                                            address: p.address,
+                                        });
+                                        setDirections(null);
+                                    }}
+                                />
+                            ))}
+
                             {selected && (
                                 <InfoWindow
                                     position={{
@@ -269,10 +351,6 @@ function MapView({ setMosques }) {
                                         <h4>
                                             {selected.name}
                                         </h4>
-                                        <p>
-                                            Lat: {selected.latitude}, Lng:{" "}
-                                            {selected.longitude}
-                                        </p>
                                         <p>
                                             {selected.distanceKm
                                                 ? `${selected.distanceKm} km away`
@@ -305,7 +383,6 @@ function MapView({ setMosques }) {
                                 />
                             )}
                         </GoogleMap>
-                    </LoadScript>
                     </div>
                 </div>
             )}

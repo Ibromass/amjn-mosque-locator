@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
+import { useOutletContext } from "react-router-dom";
 import MosqueCard from "../Components/MosqueCard";
-import NavBar from "../Components/NavBar";
+import NearestAhmadiyyaBanner from "../Components/NearestAhmadiyyaBanner";
 import { getUserLocation, calculateDistance } from "../Api/Location";
 import { MosqueService } from "../Api/MosqueService";
 import { FaMapMarkerAlt, FaList } from "react-icons/fa";
@@ -9,12 +10,14 @@ const fallbackLocation = { lat: 6.5244, lng: 3.3792 };
 const mosquesPerPage = 6;
 
 function Home() {
+    const { registerSearch } = useOutletContext() || {};
     const [mosques, setMosques] = useState([]);
     const [nearByMosques, setNearByMosques] = useState([]);
     const [filteredMosques, setFilteredMosques] = useState([]);
     const [loading, setLoading] = useState(true);
     const [favorites, setFavorites] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [userLocation, setUserLocation] = useState(null);
 
     // Load favorites
     useEffect(() => {
@@ -39,7 +42,7 @@ function Home() {
             return;
         }
         const q = query.toLowerCase();
-        const filtered = mosques.filter((m) => 
+        const filtered = mosques.filter((m) =>
             m.name?.toLowerCase().includes(q) ||
             m.state?.toLowerCase().includes(q) ||
             m.region?.toLowerCase().includes(q)
@@ -47,6 +50,11 @@ function Home() {
         setFilteredMosques(filtered);
         setCurrentPage(1);
     }, [mosques]);
+
+    // Register search handler with Layout's shared NavBar
+    useEffect(() => {
+        registerSearch?.(handleSearch);
+    }, [handleSearch, registerSearch]);
 
     useEffect(() => {
         const init = async () => {
@@ -60,7 +68,8 @@ function Home() {
                     pos = { latitude: fallbackLocation.lat, longitude: fallbackLocation.lng };
                 }
                 const userLoc = { lat: pos.latitude, lng: pos.longitude };
-                
+                setUserLocation(userLoc);
+
                 const enriched = data.map((m) => ({
                     ...m,
                     distance: calculateDistance(userLoc.lat, userLoc.lng, Number(m.latitude), Number(m.longitude)),
@@ -97,7 +106,11 @@ function Home() {
 
     return (
         <div>
-            <NavBar onSearch={handleSearch} />
+            {/* Nearest Ahmadiyya Mosque Suggestion */}
+            <NearestAhmadiyyaBanner
+                userLocation={userLocation}
+                mosques={mosques}
+            />
 
             {/* Nearby Section */}
             {nearByMosques.length > 0 && (
