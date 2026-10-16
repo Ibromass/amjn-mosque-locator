@@ -1,4 +1,4 @@
-import LoginPage from './Pages/LoginPage';
+﻿import LoginPage from './Pages/LoginPage';
 import AdminProfile from './Pages/AdminProfile';
 import MapView from './Pages/MapView';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
@@ -12,26 +12,21 @@ import { AuthContext } from './Context/UserContext';
 import { useState } from 'react';
 import EditMosque from './Pages/EditMosque';
 import News from './Pages/News';
+import NewsAdmin from './Pages/NewsAdmin';
 import Qiblah from './Pages/Qiblah';
 import OnboardingOverlay from './Components/OnboardingOverlay';
-import Favourite from './Context/Favouritecontext';
 import Favouritecontext from './Context/Favouritecontext';
 
 function App() {
-
-  const [favouriteMosques, setFavouriteMosques] = useState([])
-
+  const [favouriteMosques, setFavouriteMosques] = useState([]);
 
   return (
-
     <AuthContext>
       <Favouritecontext.Provider value={{ favouriteMosques, setFavouriteMosques }}>
         <BrowserRouter>
           <OnboardingOverlay />
-
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-
             <Route element={<Layout />}>
               <Route path="/" element={<Home />} />
               <Route path="/map-view" element={<MapView />} />
@@ -39,20 +34,16 @@ function App() {
               <Route path="/favourites" element={<Favourites />} />
               <Route path="/news" element={<News />} />
               <Route path="/qiblah" element={<Qiblah />} />
-
-
               <Route path="/addmosque" element={<ProtectedRoute><AddMosque /></ProtectedRoute>} />
-              <Route path="edit/:id" element={<ProtectedRoute><EditMosque /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute>< AdminProfile /></ProtectedRoute>} />
+              <Route path="/edit/:id" element={<ProtectedRoute><EditMosque /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><AdminProfile /></ProtectedRoute>} />
+              <Route path="/admin/news" element={<ProtectedRoute><NewsAdmin /></ProtectedRoute>} />
             </Route>
-
           </Routes>
-
-        </BrowserRouter >
+        </BrowserRouter>
       </Favouritecontext.Provider>
     </AuthContext>
-
-  )
+  );
 }
 
 export default App;
