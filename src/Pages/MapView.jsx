@@ -73,6 +73,11 @@ function MapView({ setMosques }) {
                         localSetMosques(enriched);
                         setMosques?.(enriched);
                         setLoading(false);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0,
                     }
                 );
             } catch (err) {
