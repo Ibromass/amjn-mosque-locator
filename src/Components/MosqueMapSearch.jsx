@@ -9,7 +9,7 @@ import { calculateDistance, hasValidCoordinates } from "../Api/Location";
  *    text search prefixed "Ahmadiyya mosque <query>" so every
  *    suggestion is guaranteed to be Ahmadiyya-related.
  */
-function MosqueMapSearch({ mosques, userLocation, onSelect }) {
+function MosqueMapSearch({ mosques, userLocation, onSelect, enableGoogleSearch = true }) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
     const [open, setOpen] = useState(false);
@@ -145,7 +145,7 @@ function MosqueMapSearch({ mosques, userLocation, onSelect }) {
 
             // Debounced Google Places supplement (300ms)
             clearTimeout(googleTimerRef.current);
-            if (window.google?.maps?.places) {
+            if (enableGoogleSearch && window.google?.maps?.places) {
                 googleTimerRef.current = setTimeout(() => {
                     const existingNames = new Set(
                         dbResults.map((r) => r.name.toLowerCase())
@@ -154,7 +154,7 @@ function MosqueMapSearch({ mosques, userLocation, onSelect }) {
                 }, 300);
             }
         },
-        [searchDB, searchGoogle]
+        [searchDB, searchGoogle, enableGoogleSearch]
     );
 
     const handleSelect = useCallback(

@@ -18,6 +18,7 @@ const containerStyle = {
 };
 
 const LIBRARIES = ["places"];
+const GOOGLE_PLACES_SEARCH_ENABLED = false;
 
 const GOLD_MARKER = "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png";
 const AHMADIYYA_SEARCH_TERMS = [
@@ -231,6 +232,7 @@ function MapView({ setMosques }) {
 
     // Search Google Places for Ahmadiyya mosques once the map + user location are ready
     useEffect(() => {
+        if (!GOOGLE_PLACES_SEARCH_ENABLED) return;
         if (!map || !userLocation || ahmadiyyaSearchedRef.current) return;
         ahmadiyyaSearchedRef.current = true;
         searchAhmadiyyaPlaces(userLocation, 20000, [AHMADIYYA_SEARCH_TERMS[0]]);
@@ -339,9 +341,10 @@ function MapView({ setMosques }) {
                             mosques={mosques}
                             userLocation={userLocation}
                             onSelect={handleMosqueSelect}
+                            enableGoogleSearch={GOOGLE_PLACES_SEARCH_ENABLED}
                         />
 
-                        <div className="map-area-search-controls">
+                        {GOOGLE_PLACES_SEARCH_ENABLED && <div className="map-area-search-controls">
                             <button
                                 type="button"
                                 className="map-area-search-button"
@@ -356,7 +359,7 @@ function MapView({ setMosques }) {
                                     {placesSearchMessage}
                                 </span>
                             )}
-                        </div>
+                        </div>}
 
                         <GoogleMap
                             mapContainerStyle={containerStyle}
