@@ -77,7 +77,7 @@ function MosqueMapSearch({ mosques, userLocation, onSelect }) {
             );
 
             service.textSearch(
-                { query: `Ahmadiyya mosque ${q}` },
+                { query: `Ahmadiyya mosque ${q}`, type: "mosque" },
                 (results, status) => {
                     // Only apply if this is still the current query
                     if (activeQueryRef.current !== q) return;

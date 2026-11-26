@@ -9,7 +9,7 @@ import MosqueMapSearch from "../Components/MosqueMapSearch";
 import { useEffect, useRef, useState } from "react";
 import { MosqueService } from "../Api/MosqueService";
 import { addDistanceToMosques } from "../Api/DistanceHelper";
-import { FaDirections, FaMapMarkedAlt, FaTimes, FaMosque, FaMapMarkerAlt } from "react-icons/fa";
+import { FaDirections, FaMapMarkedAlt, FaTimes, FaMosque, FaMapMarkerAlt, FaSearch } from "react-icons/fa";
 import { calculateDistance, getUserLocation, hasValidCoordinates } from "../Api/Location";
 
 const containerStyle = {
@@ -20,6 +20,30 @@ const containerStyle = {
 const LIBRARIES = ["places"];
 
 const GOLD_MARKER = "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png";
+const AHMADIYYA_SEARCH_TERMS = [
+    "Ahmadiyya mosque",
+    "Ahmadiyya Muslim Jamaat mosque",
+];
+
+const searchNearbyPages = (service, request) => new Promise((resolve) => {
+    const results = [];
+    let pagesFetched = 0;
+
+    const onResults = (pageResults, status, pagination) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && pageResults) {
+            results.push(...pageResults);
+            pagesFetched += 1;
+            if (pagination?.hasNextPage && pagesFetched < 3) {
+                window.setTimeout(() => pagination.nextPage(), 2000);
+                return;
+            }
+        }
+
+        resolve({ results, status });
+    };
+
+    service.nearbySearch(request, onResults);
+});
 
 const getNearbyMosques = (mosques, radiusKm = 10) => {
     return mosques.filter((m) => Number.isFinite(m.distanceKm) && m.distanceKm <= radiusKm);
@@ -34,6 +58,8 @@ function MapView({ setMosques }) {
     const [directions, setDirections] = useState(null);
     const [ahmadiyyaPlaces, setAhmadiyyaPlaces] = useState([]);
     const [nearestAhmadiyya, setNearestAhmadiyya] = useState(null);
+    const [isSearchingPlaces, setIsSearchingPlaces] = useState(false);
+    const [placesSearchMessage, setPlacesSearchMessage] = useState("");
 
     const rawMosquesRef = useRef([]);
     const ahmadiyyaSearchedRef = useRef(false);
@@ -106,52 +132,109 @@ function MapView({ setMosques }) {
         }
     }, [map, userLocation, mosques]);
 
+    const searchAhmadiyyaPlaces = useCallback(async (center, radius, searchTerms = AHMADIYYA_SEARCH_TERMS) => {
+        if (!map || !center || !window.google?.maps?.places) return;
+
+        setIsSearchingPlaces(true);
+        setPlacesSearchMessage("Searching Google Maps for Ahmadiyya mosques…");
+
+        try {
+            const service = new window.google.maps.places.PlacesService(map);
+            const found = [];
+
+            for (const term of searchTerms) {
+                const response = await searchNearbyPages(service, {
+                    location: new window.google.maps.LatLng(center.lat, center.lng),
+                    radius: Math.min(50000, Math.max(1000, radius)),
+                    type: "mosque",
+                    keyword: term,
+                });
+
+                if (
+                    response.status !== window.google.maps.places.PlacesServiceStatus.OK &&
+                    response.status !== window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS
+                ) {
+                    throw new Error(`Google Places search failed: ${response.status}`);
+                }
+                found.push(...response.results);
+            }
+
+            const unique = new Map();
+            found
+                .filter((place) => place.place_id && place.geometry?.location)
+                .forEach((place) => {
+                    if (unique.has(place.place_id)) return;
+                    unique.set(place.place_id, {
+                        id: place.place_id,
+                        name: place.name,
+                        address: place.vicinity || place.formatted_address || "",
+                        latitude: place.geometry.location.lat(),
+                        longitude: place.geometry.location.lng(),
+                        placeId: place.place_id,
+                        rating: place.rating,
+                    });
+                });
+
+            const places = [...unique.values()].map((place) => ({
+                ...place,
+                dist: userLocation
+                    ? calculateDistance(
+                          userLocation.lat,
+                          userLocation.lng,
+                          place.latitude,
+                          place.longitude
+                      )
+                    : null,
+            }));
+            setAhmadiyyaPlaces(places);
+
+            const sorted = [...places].sort((a, b) => a.dist - b.dist);
+            setNearestAhmadiyya(sorted[0] || null);
+            setPlacesSearchMessage(
+                places.length
+                    ? `Showing ${places.length} Google Maps Ahmadiyya mosque listings in this area.`
+                    : "No Ahmadiyya mosque listings were found in this area."
+            );
+        } catch (error) {
+            console.error("Google Places mosque search failed:", error);
+            setPlacesSearchMessage("Google Maps search is unavailable. Check the Places API settings for this map key.");
+        } finally {
+            setIsSearchingPlaces(false);
+        }
+    }, [map, userLocation]);
+
+    const searchCurrentMapArea = useCallback(() => {
+        if (!map) return;
+        const bounds = map.getBounds();
+        const center = map.getCenter();
+        if (!bounds || !center) {
+            setPlacesSearchMessage("Wait for the map to finish loading, then search this area.");
+            return;
+        }
+
+        const northEast = bounds.getNorthEast();
+        const radius = calculateDistance(
+            center.lat(),
+            center.lng(),
+            northEast.lat(),
+            northEast.lng()
+        ) * 1000;
+        if (!Number.isFinite(radius)) {
+            setPlacesSearchMessage("Could not read this map area. Try moving or zooming the map, then search again.");
+            return;
+        }
+        searchAhmadiyyaPlaces(
+            { lat: center.lat(), lng: center.lng() },
+            radius
+        );
+    }, [map, searchAhmadiyyaPlaces]);
+
     // Search Google Places for Ahmadiyya mosques once the map + user location are ready
     useEffect(() => {
         if (!map || !userLocation || ahmadiyyaSearchedRef.current) return;
         ahmadiyyaSearchedRef.current = true;
-
-        const service = new window.google.maps.places.PlacesService(map);
-        service.nearbySearch(
-            {
-                location: new window.google.maps.LatLng(userLocation.lat, userLocation.lng),
-                radius: 20000,
-                keyword: "Ahmadiyya mosque",
-            },
-            (results, status) => {
-                if (
-                    status !== window.google.maps.places.PlacesServiceStatus.OK ||
-                    !results?.length
-                ) return;
-
-                const places = results
-                    .filter((r) => r.geometry?.location)
-                    .map((r) => ({
-                        id: r.place_id,
-                        name: r.name,
-                        address: r.vicinity,
-                        latitude: r.geometry.location.lat(),
-                        longitude: r.geometry.location.lng(),
-                        placeId: r.place_id,
-                        rating: r.rating,
-                    }));
-
-                setAhmadiyyaPlaces(places);
-
-                // Find the nearest for the map info badge
-                const sorted = places
-                    .map((p) => ({
-                        ...p,
-                        dist: calculateDistance(
-                            userLocation.lat, userLocation.lng,
-                            p.latitude, p.longitude
-                        ),
-                    }))
-                    .sort((a, b) => a.dist - b.dist);
-                if (sorted.length > 0) setNearestAhmadiyya(sorted[0]);
-            }
-        );
-    }, [map, userLocation]);
+        searchAhmadiyyaPlaces(userLocation, 20000, [AHMADIYYA_SEARCH_TERMS[0]]);
+    }, [map, userLocation, searchAhmadiyyaPlaces]);
 
     const onLoad = (mapInstance) => setMap(mapInstance);
 
@@ -257,6 +340,23 @@ function MapView({ setMosques }) {
                             userLocation={userLocation}
                             onSelect={handleMosqueSelect}
                         />
+
+                        <div className="map-area-search-controls">
+                            <button
+                                type="button"
+                                className="map-area-search-button"
+                                onClick={searchCurrentMapArea}
+                                disabled={isSearchingPlaces}
+                            >
+                                <FaSearch />
+                                {isSearchingPlaces ? "Searching…" : "Find Ahmadiyya Mosques Here"}
+                            </button>
+                            {placesSearchMessage && (
+                                <span className="map-area-search-message" role="status">
+                                    {placesSearchMessage}
+                                </span>
+                            )}
+                        </div>
 
                         <GoogleMap
                             mapContainerStyle={containerStyle}

@@ -73,6 +73,7 @@ function NearestAhmadiyyaBanner({ userLocation, mosques }) {
                         userLocation.lng
                     ),
                     radius: 20000, // 20 km
+                    type: "mosque",
                     keyword: "Ahmadiyya mosque",
                 },
                 (results, status) => {
