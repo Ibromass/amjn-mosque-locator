@@ -6,7 +6,7 @@ import {
     DirectionsRenderer,
 } from "@react-google-maps/api";
 import MosqueMapSearch from "../Components/MosqueMapSearch";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MosqueService } from "../Api/MosqueService";
 import { addDistanceToMosques } from "../Api/DistanceHelper";
 import { FaDirections, FaMapMarkedAlt, FaTimes, FaMosque, FaMapMarkerAlt, FaSearch } from "react-icons/fa";
