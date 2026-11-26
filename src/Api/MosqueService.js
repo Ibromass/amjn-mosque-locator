@@ -66,8 +66,8 @@ const normalizeMosque = (mosque) => {
         circuit: mosque.circuit ?? mosque.Circuit ?? "",
         jamaat: mosque.jamaat ?? mosque.Jamaat ?? "",
         contact: mosque.contact ?? mosque.Contact ?? "",
-        latitude: Number(mosque.latitude ?? mosque.Latitude ?? 0),
-        longitude: Number(mosque.longitude ?? mosque.Longitude ?? 0),
+        latitude: normalizeCoordinate(mosque.latitude ?? mosque.Latitude, -90, 90),
+        longitude: normalizeCoordinate(mosque.longitude ?? mosque.Longitude, -180, 180),
         dateCreated: mosque.dateCreated ?? mosque.DateCreated,
         imageUrl: normalizeImageUrl(mosque.imageUrl ?? mosque.ImageUrl), // ✅ Single string
     };
@@ -76,6 +76,12 @@ const normalizeMosque = (mosque) => {
 const normalizeMosques = (data) => {
     const mosques = unwrapValues(data);
     return Array.isArray(mosques) ? mosques.map(normalizeMosque) : [];
+};
+
+const normalizeCoordinate = (value, min, max) => {
+    if (value == null || value === "") return null;
+    const coordinate = Number(value);
+    return Number.isFinite(coordinate) && coordinate >= min && coordinate <= max ? coordinate : null;
 };
 
 export const MosqueService = {

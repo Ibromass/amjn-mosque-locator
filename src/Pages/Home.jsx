@@ -75,7 +75,10 @@ function Home() {
                     distance: calculateDistance(userLoc.lat, userLoc.lng, Number(m.latitude), Number(m.longitude)),
                 }));
 
-                const sorted = enriched.sort((a, b) => a.distance - b.distance);
+                const sorted = enriched.sort(
+                    (a, b) => (Number.isFinite(a.distance) ? a.distance : Infinity) -
+                        (Number.isFinite(b.distance) ? b.distance : Infinity)
+                );
                 setMosques(sorted);
                 setFilteredMosques(sorted);
                 setNearByMosques(sorted.filter((m) => m.distance <= 5));

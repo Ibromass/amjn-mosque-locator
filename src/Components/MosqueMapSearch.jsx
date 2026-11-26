@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { FaSearch, FaMosque, FaMapMarkerAlt, FaSpinner } from "react-icons/fa";
-import { calculateDistance } from "../Api/Location";
+import { calculateDistance, hasValidCoordinates } from "../Api/Location";
 
 /**
  * Ahmadiyya-specific map search.
@@ -35,6 +35,7 @@ function MosqueMapSearch({ mosques, userLocation, onSelect }) {
             if (!q.trim()) return [];
             const lower = q.toLowerCase();
             return mosques
+                .filter((m) => hasValidCoordinates(m.latitude, m.longitude))
                 .filter(
                     (m) =>
                         m.name?.toLowerCase().includes(lower) ||

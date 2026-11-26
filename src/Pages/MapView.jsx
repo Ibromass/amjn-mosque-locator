@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { MosqueService } from "../Api/MosqueService";
 import { addDistanceToMosques } from "../Api/DistanceHelper";
 import { FaDirections, FaMapMarkedAlt, FaTimes, FaMosque, FaMapMarkerAlt } from "react-icons/fa";
-import { calculateDistance } from "../Api/Location";
+import { calculateDistance, getUserLocation, hasValidCoordinates } from "../Api/Location";
 
 const containerStyle = {
     width: "100%",
@@ -22,12 +22,8 @@ const LIBRARIES = ["places"];
 const GOLD_MARKER = "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png";
 
 const getNearbyMosques = (mosques, radiusKm = 10) => {
-    return mosques.filter((m) => parseFloat(m.distanceKm) <= radiusKm);
+    return mosques.filter((m) => Number.isFinite(m.distanceKm) && m.distanceKm <= radiusKm);
 };
-
-const hasValidCoordinates = (mosque) =>
-    Number.isFinite(Number(mosque.latitude)) &&
-    Number.isFinite(Number(mosque.longitude));
 
 function MapView({ setMosques }) {
     const [userLocation, setUserLocation] = useState(null);
@@ -55,31 +51,20 @@ function MapView({ setMosques }) {
                 const data = await MosqueService.getAll();
                 rawMosquesRef.current = data;
 
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        const userLoc = {
-                            lat: pos.coords.latitude,
-                            lng: pos.coords.longitude,
-                        };
-                        setUserLocation(userLoc);
-                        setLoading(false);
-                    },
-                    () => {
-                        const fallback = { lat: 6.5244, lng: 3.3792 };
-                        setUserLocation(fallback);
-                        const enriched = addDistanceToMosques(data, fallback).sort(
-                            (a, b) => a.distanceKm - b.distanceKm
-                        );
-                        localSetMosques(enriched);
-                        setMosques?.(enriched);
-                        setLoading(false);
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 10000,
-                        maximumAge: 0,
-                    }
+                let userLoc;
+                try {
+                    const position = await getUserLocation();
+                    userLoc = { lat: position.latitude, lng: position.longitude };
+                } catch {
+                    userLoc = { lat: 6.5244, lng: 3.3792 };
+                }
+                setUserLocation(userLoc);
+                const enriched = addDistanceToMosques(data, userLoc).sort(
+                    (a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity)
                 );
+                localSetMosques(enriched);
+                setMosques?.(enriched);
+                setLoading(false);
             } catch (err) {
                 console.error("Failed loading mosques:", err);
                 setLoading(false);
@@ -93,7 +78,7 @@ function MapView({ setMosques }) {
         if (!userLocation || rawMosquesRef.current.length === 0) return;
 
         const enriched = addDistanceToMosques(rawMosquesRef.current, userLocation).sort(
-            (a, b) => a.distanceKm - b.distanceKm
+            (a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity)
         );
         localSetMosques(enriched);
         setMosques?.(enriched);
@@ -106,7 +91,9 @@ function MapView({ setMosques }) {
         const bounds = new window.google.maps.LatLngBounds();
         bounds.extend(userLocation);
 
-        const nearby = getNearbyMosques(mosques).filter(hasValidCoordinates);
+        const nearby = getNearbyMosques(mosques).filter((m) =>
+            hasValidCoordinates(m.latitude, m.longitude)
+        );
         nearby.forEach((m) =>
             bounds.extend({ lat: Number(m.latitude), lng: Number(m.longitude) })
         );
@@ -169,7 +156,7 @@ function MapView({ setMosques }) {
     const onLoad = (mapInstance) => setMap(mapInstance);
 
     const handleMosqueSelect = (result) => {
-        if (!result.latitude || !result.longitude) return;
+        if (!hasValidCoordinates(result.latitude, result.longitude)) return;
         const pos = { lat: result.latitude, lng: result.longitude };
         map?.panTo(pos);
         map?.setZoom(16);
@@ -298,7 +285,9 @@ function MapView({ setMosques }) {
                             )}
 
                             {/* AMJN database mosque markers (green) */}
-                            {mosques.filter(hasValidCoordinates).map((m, i) => (
+                            {mosques.filter((m) =>
+                                hasValidCoordinates(m.latitude, m.longitude)
+                            ).map((m, i) => (
                                 <Marker
                                     key={m.id || `${m.latitude}-${m.longitude}-${i}`}
                                     position={{
@@ -357,7 +346,7 @@ function MapView({ setMosques }) {
                                             {selected.name}
                                         </h4>
                                         <p>
-                                            {selected.distanceKm
+                                            {selected.distanceKm != null && Number.isFinite(Number(selected.distanceKm))
                                                 ? `${selected.distanceKm} km away`
                                                 : selected.address || ""}
                                         </p>

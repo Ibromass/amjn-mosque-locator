@@ -10,6 +10,8 @@ const getMosqueImage = (imageUrl) => {
 };
 
 function MosqueCard({ mosque, isFavorite, onToggleFavorite }) {
+    const distance = mosque.distance ?? mosque.distanceKm;
+    const hasDistance = distance != null && distance !== "" && Number.isFinite(Number(distance));
     return (
         <div className="mosque-card">
             <div className="card-image">
@@ -38,7 +40,7 @@ function MosqueCard({ mosque, isFavorite, onToggleFavorite }) {
                 </button>
                 
                 <div className="distance-badge">
-                    {mosque.distance ? `${mosque.distance.toFixed(1)} km` : "Nearby"}
+                    {hasDistance ? `${Number(distance).toFixed(1)} km` : "Distance unavailable"}
                 </div>
             </div>
 

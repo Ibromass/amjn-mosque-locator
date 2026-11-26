@@ -8,6 +8,7 @@ import {
     FaMosque,
     FaInfoCircle,
 } from "react-icons/fa";
+import { getUserLocation } from "../Api/Location";
 
 /* ─── Kaaba coordinates (Mecca, Saudi Arabia) ─── */
 const KAABA = { lat: 21.4225, lng: 39.8262 };
@@ -206,33 +207,26 @@ function Qiblah() {
     const orientationListenerRef = useRef(null);
 
     /* ── Get user location ── */
-    const getLocation = useCallback(() => {
+    const getLocation = useCallback((forceRefresh = false) => {
         setLocState("loading");
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const { latitude: lat, longitude: lng } = pos.coords;
-                setUserLoc({ lat, lng });
-                setQiblahBearing(calcQiblahBearing(lat, lng));
-                setDistanceKm(Math.round(calcDistance(lat, lng, KAABA.lat, KAABA.lng)));
-                setLocState("found");
+        getUserLocation({ forceRefresh }).then(({ latitude: lat, longitude: lng }) => {
+            setUserLoc({ lat, lng });
+            setQiblahBearing(calcQiblahBearing(lat, lng));
+            setDistanceKm(Math.round(calcDistance(lat, lng, KAABA.lat, KAABA.lng)));
+            setLocState("found");
 
-                // Reverse geocode city name if Google is loaded
-                if (window.google?.maps?.Geocoder) {
-                    const gc = new window.google.maps.Geocoder();
-                    gc.geocode({ location: { lat, lng } }, (results, status) => {
-                        if (status === "OK" && results[0]) {
-                            const city =
-                                results[0].address_components.find((c) =>
-                                    c.types.includes("locality")
-                                )?.long_name || null;
-                            if (city) setCityName(city);
-                        }
-                    });
-                }
-            },
-            () => setLocState("denied"),
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
+            if (window.google?.maps?.Geocoder) {
+                const geocoder = new window.google.maps.Geocoder();
+                geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+                    if (status === "OK" && results?.[0]) {
+                        const city = results[0].address_components.find((c) =>
+                            c.types.includes("locality")
+                        )?.long_name || null;
+                        if (city) setCityName(city);
+                    }
+                });
+            }
+        }).catch(() => setLocState("denied"));
     }, []);
 
     useEffect(() => {
@@ -250,7 +244,8 @@ function Qiblah() {
             if (e.webkitCompassHeading != null) {
                 heading = e.webkitCompassHeading;
                 setCompassAccuracy(e.webkitCompassAccuracy);
-            } else if (e.alpha != null) {
+            } else if (e.absolute === true && e.alpha != null) {
+                // Relative alpha values have no north reference.
                 heading = (360 - e.alpha) % 360;
             } else {
                 return;
@@ -260,17 +255,21 @@ function Qiblah() {
         };
 
         window.addEventListener("deviceorientation", handler, true);
+        window.addEventListener("deviceorientationabsolute", handler, true);
         orientationListenerRef.current = handler;
     }, []);
 
     const requestCompass = useCallback(async () => {
         setCompassState("requesting");
         try {
-            if (typeof DeviceOrientationEvent?.requestPermission === "function") {
+            if (typeof window.DeviceOrientationEvent?.requestPermission === "function") {
                 // iOS 13+
-                const perm = await DeviceOrientationEvent.requestPermission();
+                const perm = await window.DeviceOrientationEvent.requestPermission();
                 if (perm === "granted") {
                     attachOrientationListener();
+                    setTimeout(() => {
+                        setCompassState((prev) => (prev === "requesting" ? "none" : prev));
+                    }, 1500);
                 } else {
                     setCompassState("denied");
                 }
@@ -287,21 +286,19 @@ function Qiblah() {
         }
     }, [attachOrientationListener]);
 
-    // Auto-request compass when location is found (mobile only)
+    // Start listening automatically. If iOS already granted sensor access in
+    // this session, its heading arrives without another prompt; otherwise the
+    // explicit button below is required by iOS.
     useEffect(() => {
-        if (!IS_MOBILE) return;
-        if (locState === "found" && compassState === "none") {
-            if (typeof DeviceOrientationEvent?.requestPermission !== "function") {
-                attachOrientationListener();
-            }
-        }
-    }, [locState, compassState, attachOrientationListener]);
+        if (IS_MOBILE && locState === "found") attachOrientationListener();
+    }, [locState, attachOrientationListener]);
 
     // Cleanup
     useEffect(() => {
         return () => {
             if (orientationListenerRef.current) {
                 window.removeEventListener("deviceorientation", orientationListenerRef.current, true);
+                window.removeEventListener("deviceorientationabsolute", orientationListenerRef.current, true);
             }
         };
     }, []);
@@ -344,7 +341,7 @@ function Qiblah() {
                     <div className="qiblah-status qiblah-status--error">
                         <FaExclamationTriangle />
                         Location access denied.&nbsp;
-                        <button onClick={getLocation} className="qiblah-inline-btn">
+                        <button onClick={() => getLocation(true)} className="qiblah-inline-btn">
                             Try again
                         </button>
                     </div>
@@ -353,7 +350,7 @@ function Qiblah() {
                     <div className="qiblah-status qiblah-status--ok">
                         <FaMapMarkerAlt />
                         {cityName ? `Location: ${cityName}` : "Location detected"}
-                        <button onClick={getLocation} className="qiblah-inline-btn" title="Refresh location">
+                        <button onClick={() => getLocation(true)} className="qiblah-inline-btn" title="Refresh location">
                             <FaRedo style={{ fontSize: 11 }} />
                         </button>
                     </div>
@@ -416,7 +413,7 @@ function Qiblah() {
                         ) : compassState === "denied" ? (
                             <div className="qiblah-compass-denied">
                                 <FaExclamationTriangle style={{ color: "#f97316", flexShrink: 0 }} />
-                                <span>Compass permission denied. The arrow above shows the Qiblah bearing from North.</span>
+                                <span>The phone heading sensor is unavailable. The arrow above still shows the Qiblah bearing from North.</span>
                             </div>
                         ) : compassState === "requesting" ? (
                             <div className="qiblah-compass-denied">
@@ -425,7 +422,7 @@ function Qiblah() {
                             </div>
                         ) : (
                             <button className="qiblah-compass-btn" onClick={requestCompass}>
-                                <FaCompass /> Enable Live Compass
+                                <FaCompass /> Start Live Phone Compass
                             </button>
                         )}
                     </div>
@@ -449,10 +446,10 @@ function Qiblah() {
             <div className="qiblah-guide">
                 <h3><FaInfoCircle /> How to Use</h3>
                 <ol className="qiblah-guide-list">
-                    <li>Allow location access so we can calculate your exact Qiblah bearing.</li>
+                    <li>Your app location is reused to calculate the Qiblah bearing. Allow location once when the app first asks.</li>
                     {IS_MOBILE ? (
                         <>
-                            <li>Tap <strong>Enable Live Compass</strong> to activate your device&apos;s sensor.</li>
+                            <li>On iPhone, tap <strong>Start Live Phone Compass</strong> once to enable the built-in heading sensor. Android starts it automatically when available.</li>
                             <li>Hold your phone flat and rotate slowly until the <span style={{ color: "#16a34a", fontWeight: 700 }}>green arrow</span> points straight up — that&apos;s the Qiblah direction.</li>
                         </>
                     ) : (

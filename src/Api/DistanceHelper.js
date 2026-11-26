@@ -1,18 +1,13 @@
 // ✅ Return number, not string
 
-import { calculateDistance } from "./Location";
+import { calculateDistance, hasValidCoordinates } from "./Location";
 export const addDistanceToMosques = (mosques, userLoc) => {
-  if (!userLoc || !mosques) return [];
+  if (!hasValidCoordinates(userLoc?.lat, userLoc?.lng) || !Array.isArray(mosques)) return [];
 
-  return mosques.map((m) => ({
-    ...m,
-    distanceKm: parseFloat(
-      calculateDistance(
-        userLoc.lat,
-        userLoc.lng,
-        m.latitude,
-        m.longitude
-      ).toFixed(2)
-    ),
-  }));
+  return mosques.map((m) => {
+    const distance = hasValidCoordinates(m.latitude, m.longitude)
+      ? calculateDistance(userLoc.lat, userLoc.lng, m.latitude, m.longitude)
+      : NaN;
+    return { ...m, distanceKm: Number.isFinite(distance) ? Number(distance.toFixed(2)) : null };
+  });
 };
